@@ -1,0 +1,10 @@
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiNzkwOGMwNy02MGI0LTQ1MjItYmJjNC1mMTdhOThjZDdjMWQiLCJlbWFpbCI6Imluc3RydWN0b3JAZWxtcy5lZHUiLCJyb2xlIjoiSU5TVFJVQ1RPUiIsImlhdCI6MTc4NTM4MjYyMiwiZXhwIjoxNzg1OTg3NDIyfQ.2eyGnSogoiO6dOOHQG14k1P9Z-W5EVtsUekQdiRjguM",
+  "courseId": "4e15e5a3-067b-48c8-bf6d-36203c5c1680",
+  "modules": {
+    "Course Introduction": {
+      "id": "ad7f0e76-af7f-4b32-a624-cf070bc95d2c",
+      "lessons": {}
+    }
+  }
+}

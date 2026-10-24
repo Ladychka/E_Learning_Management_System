@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+*.log
+prisma/migrations/*/
+!prisma/migrations/migration_lock.toml
+uploads
+coverage
+.DS_Store

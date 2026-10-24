@@ -1,0 +1,315 @@
+{
+  "baseUrl": "http://localhost:5001",
+  "credentials": {
+    "email": "instructor@elms.edu",
+    "password": "Instructor123!"
+  },
+  "category": null,
+  "course": {
+    "title": "Personal Finance Mastery",
+    "description": "A comprehensive course covering budgeting, saving, investing, retirement planning, and wealth building strategies for beginners.",
+    "shortDesc": "Master your money with practical personal finance skills",
+    "level": "BEGINNER",
+    "price": 49.99,
+    "currency": "USD",
+    "isFree": false,
+    "duration": 1980,
+    "language": "en",
+    "prerequisites": [],
+    "learningOutcomes": [
+      "Create and maintain a personal budget",
+      "Build an emergency fund and savings plan",
+      "Understand and manage debt effectively",
+      "Start investing in stocks, bonds, and ETFs",
+      "Plan for retirement using tax-advantaged accounts",
+      "Understand risk management and insurance",
+      "Optimize tax strategies for personal finance"
+    ],
+    "tags": ["finance", "personal-finance", "investing", "budgeting", "money-management"]
+  },
+  "videoFolder": "W:/FinTech/video_lessons",
+  "modules": [
+    {
+      "title": "Course Introduction",
+      "description": "Welcome and course overview",
+      "lessons": [
+        {
+          "title": "Welcome to Personal Finance Mastery",
+          "description": "Course introduction and what you will learn",
+          "videoFile": "Video 1(Chapter01).mp4",
+          "duration": 300,
+          "isPreview": true,
+          "isPublished": true
+        }
+      ]
+    },
+    {
+      "title": "Budgeting Fundamentals",
+      "description": "Learn how to create and stick to a budget",
+      "lessons": [
+        {
+          "title": "Why Budgeting Matters",
+          "description": "The foundation of financial success",
+          "videoFile": "M02-L01-why-budget.mp4",
+          "duration": 600,
+          "isPreview": true,
+          "isPublished": true
+        },
+        {
+          "title": "The 50-30-20 Rule",
+          "description": "A simple framework for allocating your income",
+          "videoFile": "M02-L02-50-30-20.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Tracking Your Expenses",
+          "description": "Tools and techniques for monitoring spending",
+          "videoFile": "M02-L03-tracking-expenses.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Creating Your First Budget",
+          "description": "Step-by-step budget creation walkthrough",
+          "videoFile": "M02-L04-first-budget.mp4",
+          "duration": 900,
+          "isPublished": true
+        },
+        {
+          "title": "Budgeting Mistakes to Avoid",
+          "description": "Common pitfalls and how to overcome them",
+          "videoFile": "M02-L05-budget-mistakes.mp4",
+          "duration": 600,
+          "isPublished": true
+        }
+      ]
+    },
+    {
+      "title": "Saving Strategies",
+      "description": "Build your safety net and savings habits",
+      "lessons": [
+        {
+          "title": "The Emergency Fund",
+          "description": "Why and how to build a 3-6 month safety net",
+          "videoFile": "M03-L01-emergency-fund.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Pay Yourself First",
+          "description": "Automating your savings strategy",
+          "videoFile": "M03-L02-pay-yourself-first.mp4",
+          "duration": 480,
+          "isPublished": true
+        },
+        {
+          "title": "High-Yield Savings Accounts",
+          "description": "Where to park your cash for maximum returns",
+          "videoFile": "M03-L03-high-yield-savings.mp4",
+          "duration": 540,
+          "isPublished": true
+        },
+        {
+          "title": "Sinking Funds Explained",
+          "description": "Planning for irregular expenses",
+          "videoFile": "M03-L04-sinking-funds.mp4",
+          "duration": 540,
+          "isPublished": true
+        }
+      ]
+    },
+    {
+      "title": "Debt Management",
+      "description": "Understand and eliminate debt",
+      "lessons": [
+        {
+          "title": "Good Debt vs Bad Debt",
+          "description": "Not all debt is created equal",
+          "videoFile": "M04-L01-good-vs-bad-debt.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "The Debt Avalanche Method",
+          "description": "Mathematically optimal debt repayment",
+          "videoFile": "M04-L02-debt-avalanche.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "The Debt Snowball Method",
+          "description": "Psychology-driven debt repayment",
+          "videoFile": "M04-L03-debt-snowball.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Negotiating with Creditors",
+          "description": "Lowering rates and settling debt",
+          "videoFile": "M04-L04-negotiating-creditors.mp4",
+          "duration": 720,
+          "isPublished": true
+        }
+      ]
+    },
+    {
+      "title": "Investing Basics",
+      "description": "Grow your wealth through investing",
+      "lessons": [
+        {
+          "title": "Why You Must Invest",
+          "description": "The power of compound interest and inflation",
+          "videoFile": "Video 28(Chapter05).mp4",
+          "duration": 600,
+          "isPreview": true,
+          "isPublished": true
+        },
+        {
+          "title": "Stocks vs Bonds vs ETFs",
+          "description": "Understanding the main asset classes",
+          "videoFile": "M05-L02-stocks-bonds-etfs.mp4",
+          "duration": 720,
+          "isPublished": true
+        },
+        {
+          "title": "Understanding Risk Tolerance",
+          "description": "Finding your comfort level with market volatility",
+          "videoFile": "M05-L03-risk-tolerance.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Diversification Strategy",
+          "description": "Don't put all your eggs in one basket",
+          "videoFile": "M05-L04-diversification.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Index Funds for Beginners",
+          "description": "The simplest path to market returns",
+          "videoFile": "M05-L05-index-funds.mp4",
+          "duration": 720,
+          "isPublished": true
+        },
+        {
+          "title": "Opening Your First Brokerage Account",
+          "description": "Step-by-step account setup guide",
+          "videoFile": "M05-L06-first-brokerage.mp4",
+          "duration": 840,
+          "isPublished": true
+        },
+        {
+          "title": "Dollar-Cost Averaging",
+          "description": "Investing consistently over time",
+          "videoFile": "M05-L07-dollar-cost-averaging.mp4",
+          "duration": 600,
+          "isPublished": true
+        }
+      ]
+    },
+    {
+      "title": "Retirement Planning",
+      "description": "Secure your financial future",
+      "lessons": [
+        {
+          "title": "Understanding 401k and IRA Accounts",
+          "description": "Tax-advantaged retirement accounts explained",
+          "videoFile": "M06-L01-401k-ira.mp4",
+          "duration": 720,
+          "isPublished": true
+        },
+        {
+          "title": "Employer Matching Explained",
+          "description": "Free money you shouldn't leave on the table",
+          "videoFile": "M06-L02-employer-matching.mp4",
+          "duration": 480,
+          "isPublished": true
+        },
+        {
+          "title": "How Much You Need to Retire",
+          "description": "Calculating your retirement number",
+          "videoFile": "M06-L03-retirement-number.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "The 4 Percent Rule",
+          "description": "Safe withdrawal strategies in retirement",
+          "videoFile": "M06-L04-four-percent-rule.mp4",
+          "duration": 600,
+          "isPublished": true
+        }
+      ]
+    },
+    {
+      "title": "Risk Management & Insurance",
+      "description": "Protect what you have built",
+      "lessons": [
+        {
+          "title": "Types of Insurance You Actually Need",
+          "description": "Health, life, auto, and disability insurance basics",
+          "videoFile": "M07-L01-insurance-types.mp4",
+          "duration": 720,
+          "isPublished": true
+        },
+        {
+          "title": "Understanding Premiums and Deductibles",
+          "description": "How insurance pricing works",
+          "videoFile": "M07-L02-premiums-deductibles.mp4",
+          "duration": 540,
+          "isPublished": true
+        },
+        {
+          "title": "Emergency Planning Beyond Savings",
+          "description": "Estate planning and legal protections",
+          "videoFile": "M07-L03-emergency-planning.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "When to Get a Financial Advisor",
+          "description": "Signs you need professional help",
+          "videoFile": "M07-L04-financial-advisor.mp4",
+          "duration": 540,
+          "isPublished": true
+        }
+      ]
+    },
+    {
+      "title": "Tax Planning",
+      "description": "Keep more of what you earn",
+      "lessons": [
+        {
+          "title": "Tax Brackets Explained",
+          "description": "How marginal tax rates actually work",
+          "videoFile": "M08-L01-tax-brackets.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Deductions vs Credits",
+          "description": "Maximizing your tax savings",
+          "videoFile": "M08-L02-deductions-credits.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Tax-Advantaged Accounts",
+          "description": "HSAs, FSAs, and other savings tools",
+          "videoFile": "M08-L03-tax-advantaged-accounts.mp4",
+          "duration": 600,
+          "isPublished": true
+        },
+        {
+          "title": "Filing Taxes for Beginners",
+          "description": "Software, documents, and common mistakes",
+          "videoFile": "M08-L04-filing-taxes.mp4",
+          "duration": 720,
+          "isPublished": true
+        }
+      ]
+    }
+  ]
+}
