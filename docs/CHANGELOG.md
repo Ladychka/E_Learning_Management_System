@@ -4,6 +4,33 @@ All notable changes and progress to the ELMS project are documented in this file
 
 ---
 
+## Phase C Polish — 2026-10-25
+
+### Added
+- **Design System & Emerald/Navy Fintech Theme**:
+  - Configured `tailwind.config.js` with `darkMode: "class"`, Emerald-500 primary, Navy-900 slate neutrals, Gold badges, and Battambang/Kantumruy Pro Khmer fonts.
+  - Enhanced `index.css` with dark mode utilities (`.card-dark`, `.input-dark`, `.btn-dark`, `.skeleton`).
+- **4-State UI Components (`frontend/src/components/common/`)**:
+  - `LoadingSkeleton.tsx`: Dedicated shimmering pulse skeletons for Course Grid, Table rows, and Metric cards.
+  - `EmptyState.tsx`: High-polish empty state illustrations with action buttons.
+  - `ErrorState.tsx`: Accessible retryable error component with network reconnection guidance.
+- **Bilingual Localization (`i18n`)**:
+  - Configured `i18next` and `react-i18next` with authentic English and Khmer (`km.json`) translations (បាគង, KHQR, ធនាគារជាតិនៃកម្ពុជា, វគ្គសិក្សា, កិច្ចការ).
+  - Language switcher in main top navigation with automatic DOM font family switching.
+- **Context & Navigation Chrome**:
+  - `ThemeContext.tsx`: Persistent dark mode, language selector, and low-bandwidth data-saver toggle.
+  - Enhanced top bar in `Layout.tsx` with Dark/Light toggle, Language switcher (`🇺🇸 EN / 🇰🇭 ខ្មែរ`), and Data Saver mode.
+- **Onboarding & Auth Polish**:
+  - `OnboardingModal.tsx`: 3-step personalized onboarding dialog (language, fintech experience level, and learning goals).
+  - `Login.tsx`: Show/hide password eye toggle, dark mode cards, and one-click demo credentials bar (Admin, Instructor, Student).
+  - `Register.tsx`: Show/hide password eye toggle, real-time 4-level password strength meter, and terms of service acceptance.
+- **Screen 4-State Upgrades**:
+  - `Courses.tsx`: Added `CourseGridSkeleton`, `EmptyState`, and `ErrorState` with retry.
+  - `MyEnrollments.tsx`: Added `TableSkeleton`, `EmptyState`, and dark-mode styling.
+  - `MyGrades.tsx`: Added `TableSkeleton`, `EmptyState`, and dark-mode styling.
+
+---
+
 ## Phase B Polish — 2026-10-25
 
 ### Added

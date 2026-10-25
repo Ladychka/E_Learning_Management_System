@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Award, TrendingUp, AlertCircle, BookOpen } from "lucide-react";
+import { Award, TrendingUp, AlertCircle } from "lucide-react";
 import { gradeApi } from "@/lib/api";
+import { TableSkeleton } from "@/components/common/LoadingSkeleton";
+import { EmptyState } from "@/components/common/EmptyState";
 
 interface Grade {
   id: string;
@@ -110,14 +112,15 @@ export function MyGrades() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-        </div>
+        <TableSkeleton rows={4} />
       ) : filteredGrades.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-          <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No grades available yet.</p>
-        </div>
+        <EmptyState
+          icon={Award}
+          title="No Grades Available"
+          description="You haven't completed any graded quizzes or rubrics assignments yet for this selection."
+          actionText="Browse Courses"
+          actionLink="/courses"
+        />
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">

@@ -1,0 +1,80 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "courses": "Browse Courses",
+    "myCourses": "My Courses",
+    "financeTools": "Fintech Tools",
+    "grades": "My Grades",
+    "payments": "Billing & Receipts",
+    "certificates": "Certificates",
+    "admin": "Admin Console",
+    "settings": "Settings",
+    "logout": "Log Out",
+    "login": "Log In",
+    "register": "Register"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "subtitle": "Here's what's happening in your fintech learning journey.",
+    "streak": "Study Streak",
+    "streakDays": "{{count}} Days Active",
+    "resumeTitle": "Resume Where You Left Off",
+    "resumeCourse": "Resume Course",
+    "progress": "Course Progress",
+    "badgesTitle": "Fintech Badges & Achievements",
+    "badgesSubtitle": "Earn recognition for consistent learning and assessment excellence",
+    "recentGrades": "Recent Grades",
+    "myEnrollments": "My Enrolled Courses"
+  },
+  "courses": {
+    "title": "Explore Fintech & Banking Courses",
+    "subtitle": "From Bakong KHQR architecture to NBC risk compliance and microfinance credit scoring.",
+    "allTopics": "All Topics",
+    "allLevels": "All Levels",
+    "allPrices": "All Prices",
+    "freeOnly": "Free Courses",
+    "paidOnly": "Paid / Premium",
+    "searchPlaceholder": "Search by title, topic, or keyword...",
+    "enrollFree": "Enroll Free",
+    "buyNow": "Enroll Now",
+    "curriculum": "Curriculum Syllabus",
+    "whatYouLearn": "What You Will Learn",
+    "prerequisites": "Prerequisites",
+    "aboutInstructor": "About the Instructor",
+    "reviews": "Student Reviews",
+    "faq": "Frequently Asked Questions",
+    "disclaimer": "National Financial Education Notice"
+  },
+  "financeTools": {
+    "title": "Cambodian Fintech Literacy Hub",
+    "subtitle": "Explore interactive financial calculators, NBC regulatory ratios, and KHQR banking tools.",
+    "loanCalc": "Loan & EMI Calculator",
+    "compoundCalc": "Compound Interest & Growth",
+    "budgetCalc": "50/30/20 Budget Planner",
+    "currencyConverter": "USD ↔ KHR NBC Converter",
+    "glossary": "Fintech Glossary"
+  },
+  "payment": {
+    "checkout": "Secure Checkout",
+    "khqrTitle": "Pay with Bakong KHQR",
+    "scanQr": "Scan this QR with any Cambodian banking app (ABA, ACLEDA, Wing, Canadia)",
+    "sessionExpires": "Session expires in",
+    "waiting": "Waiting for payment confirmation...",
+    "confirmSim": "I Have Paid (Simulate Confirmation)",
+    "guarantee": "256-bit Encrypted Transaction"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "language": "Language",
+    "darkMode": "Dark Mode",
+    "dataSaver": "Data Saver Mode"
+  }
+}

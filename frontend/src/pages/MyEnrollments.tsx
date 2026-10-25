@@ -19,6 +19,9 @@ interface Enrollment {
   };
 }
 
+import { TableSkeleton } from "@/components/common/LoadingSkeleton";
+import { EmptyState } from "@/components/common/EmptyState";
+
 export function MyEnrollments() {
   const { user: _user } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -54,29 +57,32 @@ export function MyEnrollments() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-emerald-500" />;
       case "active":
-        return <Clock className="w-4 h-4 text-blue-500" />;
+        return <Clock className="w-4 h-4 text-emerald-600" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
+        return <AlertCircle className="w-4 h-4 text-slate-400" />;
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      <div className="max-w-5xl mx-auto py-8 px-4">
+        <TableSkeleton rows={4} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4">
+    <div className="max-w-5xl mx-auto py-8 px-4 space-y-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">My Enrollments</h1>
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight">My Enrollments</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Track your enrolled courses, certificates, and learning progress</p>
+        </div>
         <Link
           to="/courses"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="btn-primary inline-flex items-center gap-2 text-xs sm:text-sm px-4 py-2"
         >
           <BookOpen className="w-4 h-4" />
           Browse Courses
@@ -84,21 +90,21 @@ export function MyEnrollments() {
       </div>
 
       {enrollments.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-          <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-2">You are not enrolled in any courses yet.</p>
-          <Link to="/courses" className="text-blue-600 hover:underline font-medium">
-            Explore courses
-          </Link>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title="No Active Enrollments"
+          description="You haven't enrolled in any courses yet. Explore our fintech syllabus and start earning verified certificates."
+          actionText="Explore Courses"
+          actionLink="/courses"
+        />
       ) : (
         <div className="grid gap-4">
           {enrollments.map((enrollment) => (
             <div
               key={enrollment.id}
-              className="bg-white rounded-xl border border-gray-200 p-4 flex items-start gap-4 hover:shadow-md transition"
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 flex items-start gap-4 hover:shadow-md transition text-slate-900 dark:text-slate-100"
             >
-              <div className="w-24 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+              <div className="w-24 h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 overflow-hidden">
                 {enrollment.course.thumbnailUrl ? (
                   <img
                     src={enrollment.course.thumbnailUrl}
@@ -106,7 +112,7 @@ export function MyEnrollments() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
                     <BookOpen className="w-6 h-6" />
                   </div>
                 )}
@@ -114,25 +120,25 @@ export function MyEnrollments() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {getStatusIcon(enrollment.status)}
-                  <span className="text-sm font-medium capitalize">{enrollment.status}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">{enrollment.status}</span>
                 </div>
                 <Link
                   to={`/courses/${enrollment.course.id}`}
-                  className="text-lg font-semibold text-gray-900 hover:text-blue-600 truncate block"
+                  className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-600 dark:hover:text-emerald-400 truncate block transition"
                 >
                   {enrollment.course.title}
                 </Link>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Instructor: {enrollment.course.instructor.firstName} {enrollment.course.instructor.lastName}
                 </p>
                 <div className="mt-3">
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-gray-600">Progress</span>
-                    <span className="font-medium">{enrollment.progressPercent}%</span>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Course Progress</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{enrollment.progressPercent}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      className="bg-emerald-600 h-2 rounded-full transition-all"
                       style={{ width: `${enrollment.progressPercent}%` }}
                     />
                   </div>

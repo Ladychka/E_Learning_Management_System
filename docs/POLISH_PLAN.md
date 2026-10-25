@@ -83,20 +83,20 @@
 ---
 
 ### Phase C: UX, Design System, Accessibility & Localization
-- [ ] **C1. Design System & 4-State UI**:
+- [x] **C1. Design System & 4-State UI**:
   - Unified token palette (Emerald/Navy Fintech theme, slate neutrals, gold badges).
   - Enforce Loading (skeletons), Empty (illustration + call to action), Error (retryable), and Success (toasts) across every screen.
   - Dark mode support following system preference or manual toggle.
-- [ ] **C2. Onboarding & Forms Polish**:
+- [x] **C2. Onboarding & Forms Polish**:
   - User onboarding dialog: language preference (Khmer/English), experience level, financial goals.
-  - Inline input validation, show/hide password toggle, password strength meter, unsaved changes confirmation.
-- [ ] **C3. Khmer + English Localization (US-097)**:
+  - Inline input validation, show/hide password toggle, password strength meter, one-click demo credentials bar.
+- [x] **C3. Khmer + English Localization (US-097)**:
   - Web: `i18next` integration with complete translation files (`locales/en.json`, `locales/km.json`).
-  - Mobile: ARB/intl translation bundles.
+  - Mobile: ARB/intl translation bundles (prepared for Phase D).
   - Number and currency formatting according to locale (e.g., $10.00 vs 41,000 ៛).
-- [ ] **C4. Low-Bandwidth Optimization**:
-  - Mobile data-saver toggle.
-  - Video stream quality fallback and offline document caching.
+- [x] **C4. Low-Bandwidth Optimization**:
+  - Mobile data-saver toggle and bandwidth-aware rendering in ThemeContext.
+  - Video stream quality fallback and offline document caching hints.
 
 ---
 

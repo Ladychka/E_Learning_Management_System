@@ -14,6 +14,9 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { CourseGridSkeleton } from "@/components/common/LoadingSkeleton";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
 
 interface Course {
   id: string;
@@ -44,6 +47,7 @@ export const Courses = () => {
   const [level, setLevel] = useState("");
   const [priceFilter, setPriceFilter] = useState<"ALL" | "FREE" | "PAID">("ALL");
   const [sortBy, setSortBy] = useState<"POPULAR" | "NEWEST" | "PRICE_ASC" | "PRICE_DESC">("POPULAR");
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -52,6 +56,7 @@ export const Courses = () => {
 
   const fetchCourses = async () => {
     setLoading(true);
+    setHasError(false);
     try {
       const params: Record<string, string> = {};
       if (search) params.search = search;
@@ -60,6 +65,7 @@ export const Courses = () => {
       const res = await courseApi.getCourses(params);
       setCourses(res.data.data || []);
     } catch {
+      setHasError(true);
       toast.error("Failed to load courses");
     } finally {
       setLoading(false);
@@ -183,15 +189,26 @@ export const Courses = () => {
 
       {/* Courses Grid */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600" />
-        </div>
+        <CourseGridSkeleton count={6} />
+      ) : hasError ? (
+        <ErrorState
+          title="Failed to Load Courses"
+          message="We couldn't connect to the server to fetch the course catalog. Please check your connection and try again."
+          onRetry={fetchCourses}
+        />
       ) : filteredAndSortedCourses.length === 0 ? (
-        <div className="card py-16 text-center text-gray-500">
-          <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-          <p className="font-semibold text-gray-700">No courses match your criteria.</p>
-          <p className="text-xs text-gray-400 mt-1">Try resetting your search query or price filters.</p>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title="No Courses Found"
+          description="We couldn't find any courses matching your selected topic, level, or price range. Try broadening your search or resetting filters."
+          actionText="Reset Filters"
+          onAction={() => {
+            setSearch("");
+            setCategoryId("");
+            setLevel("");
+            setPriceFilter("ALL");
+          }}
+        />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredAndSortedCourses.map((course) => {
