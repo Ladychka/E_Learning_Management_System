@@ -18,6 +18,7 @@ import {
   BarChart3,
   Shield,
   Sliders,
+  Calculator,
 } from "lucide-react";
 import { useState } from "react";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -33,6 +34,7 @@ export const Layout = () => {
   const navItems = [
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
     { path: "/courses", label: "Courses", icon: BookOpen },
+    { path: "/finance-tools", label: "Finance Tools", icon: Calculator },
     { path: "/my-enrollments", label: "My Enrollments", icon: ClipboardList },
     { path: "/my-grades", label: "My Grades", icon: Award },
     { path: "/my-certificates", label: "My Certificates", icon: FileCheck },

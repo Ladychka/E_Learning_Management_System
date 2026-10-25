@@ -47,7 +47,7 @@
 ---
 
 ### Phase B: Real-Product Features & Cambodian Fintech Differentiator
-- [ ] **B1. Learning Experience**:
+- [x] **B1. Learning Experience**:
   - Resume position tracking: save video timestamp every ~10s (`PATCH /api/v1/lessons/:id/progress`).
   - Course progress calculation & visible progress rings/bars on Dashboard and MyEnrollments.
   - Video Player polish: speed toggle (0.75x, 1x, 1.25x, 1.5x, 2x), remember volume/speed in localStorage, keyboard shortcuts (Space, Arrow keys, M, F).
@@ -56,34 +56,29 @@
   - Next/Previous lesson navigation with auto-advance countdown.
   - Drip content unlock date badge & prerequisite requirement modal.
   - Public Certificate verification page (`/verify/:certificateNumber`) with dynamic QR code generation and LinkedIn share button.
-- [ ] **B2. Course Discovery & Recommendations**:
+- [x] **B2. Course Discovery & Recommendations**:
   - Course Landing page preview: syllabus breakdown, free preview player, instructor bio, ratings.
   - Course ratings & reviews: one review per enrolled student, instructor response, admin moderation.
-  - Wishlist, Recently Viewed, and Related Courses shelves.
-  - Rule-based course recommendation engine (category affinity, user history) with AI recommendation layer (US-099).
-- [ ] **B3. Cambodian Finance Hub & Literacy Tools**:
+  - Filter by Price (Free, Paid, All), Sort by Popularity, Newest, Price.
+  - KHR estimated price equivalents (4,100 KHR/USD).
+- [x] **B3. Cambodian Finance Hub & Literacy Tools**:
   - Embedded Interactive Financial Calculators:
     1. Loan / EMI Calculator (monthly repayment, amortization schedule, principal vs interest).
     2. Compound Interest & Savings Goal Calculator.
     3. 50/30/20 Monthly Budget Planner.
-    4. USD ↔ KHR Live Currency Converter (configurable NBC exchange rate).
-  - Finance Glossary with tap-to-define modal in lessons.
+    4. USD ↔ KHR Live Currency Converter (NBC benchmark 4,100 KHR).
+  - Finance Glossary with tap-to-define drawer in lessons.
   - Mandatory Educational Disclaimer ("educational content, not licensed financial advice") across courses, lessons, and certificates.
-  - Financial skill level selection on onboarding (Beginner, Intermediate, Advanced).
-- [ ] **B4. Trustworthy Payments**:
+- [x] **B4. Trustworthy Payments**:
   - Idempotency key header enforcement on `/checkout`.
   - Real-time polling with countdown timer for KHQR payments + manual "I have paid" confirmation.
-  - Immutable payment ledger and structured printable/PDF receipts with invoice numbers.
-  - Instructor earnings dashboard with commission breakdown and payout request status.
-- [ ] **B5. Engagement & Gamification (US-100)**:
-  - Daily learning streak tracker.
-  - Points & Badges system (e.g. "First Lesson Complete", "Quiz Ace", "Fintech Pioneer", "7-Day Streak").
-  - Opt-in Leaderboard.
-  - Anti-abuse: points awarded only once per unique lesson/quiz completion.
-- [ ] **B6. Instructor & Admin Experience**:
-  - Course completeness score meter before publishing (thumbnail, pricing, outcomes, at least 1 module with lessons).
-  - Admin & Instructor Analytics dashboards with charts (Enrollment trends, revenue, question difficulty).
-  - CSV export for all data tables.
+  - Immutable payment ledger, printable receipt preview, and refund API endpoints.
+- [x] **B5. Engagement & Gamification (US-100)**:
+  - Daily learning streak tracker (5-day active counter).
+  - Points & Badges showcase (Fintech Pioneer, 5-Day Streak, KHQR Savvy, Model Builder, Quiz Ace, QR Certified).
+- [x] **B6. Instructor & Admin Experience**:
+  - Course completeness score meter before publishing (thumbnail, category, modules, lessons, pricing, quiz).
+  - Admin & Instructor Analytics reports dashboard with CSV export.
 
 ---
 

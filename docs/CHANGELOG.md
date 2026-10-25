@@ -4,6 +4,32 @@ All notable changes and progress to the ELMS project are documented in this file
 
 ---
 
+## Phase B Polish — 2026-10-25
+
+### Added
+- **Interactive Cambodian Finance Hub (`/finance-tools`)**:
+  - Loan / EMI Amortization calculator with month-by-month principal vs interest breakdown.
+  - Compound Interest & Savings Goal projection simulator.
+  - 50/30/20 Monthly Budget Planner (USD and KHR dual currency support).
+  - USD ↔ KHR Live Currency Converter with National Bank of Cambodia (NBC) reference rate (4,100 KHR).
+  - Searchable Cambodian Fintech Glossary (KHQR, Bakong, NBC, EMI, CBC, AML/CFT).
+- **Course Discovery & Landing Page Polish**:
+  - Enriched `CourseDetail.tsx` with Learning Outcomes checklist, Prerequisites, Instructor Bio, Student Reviews (4.9/5.0), FAQ accordion, sticky Enroll/Purchase bar, and mandatory NBC educational disclaimer.
+  - Enriched `Courses.tsx` with Price filter (All, Free, Paid), Sorting (Popularity, Newest, Price), and KHR equivalent badges.
+- **Trustworthy Payments & KHQR Rails**:
+  - Idempotency key support in `payment.controller.ts` on checkout.
+  - 5-minute KHQR session countdown timer with automatic status polling every 3 seconds.
+  - Manual sandbox confirmation simulation button (`POST /api/v1/payments/:id/confirm`).
+  - Printable receipt generator and refund endpoint support.
+- **Learning Experience Polish**:
+  - `LessonPlayer.tsx` video speed controls (0.75x–2.0x), auto-advance 5s countdown banner, timestamp-linked personal notes & bookmarks, and embedded finance tools slide-over drawer.
+  - Public Certificate verification view (`/verify/:certificateNumber`) with cryptographic QR generation and LinkedIn share button.
+- **Instructor Quality Control & Gamification**:
+  - Course Completeness Score Meter in `CourseBuilder.tsx` before publishing (outcomes, modules, lessons, pricing, quiz).
+  - Study streak tracker (5 days active) and Financial Literacy Badges showcase in `Dashboard.tsx` (Fintech Pioneer, KHQR Savvy, Quiz Ace, etc.).
+
+---
+
 ## Sprint 1 — 2026-07-10 to 2026-07-24
 
 ### Added

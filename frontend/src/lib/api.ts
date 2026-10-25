@@ -179,7 +179,12 @@ export const gradeApi = {
 
 // Payment endpoints
 export const paymentApi = {
-  checkout: (data: Record<string, unknown>) => api.post("/payments/checkout", data),
+  checkout: (data: Record<string, unknown>, headers?: Record<string, string>) =>
+    api.post("/payments/checkout", data, { headers }),
+  confirmPayment: (id: string, data: { status: string; gatewayRef?: string }) =>
+    api.post(`/payments/${id}/confirm`, data),
+  refundPayment: (id: string, reason: string) =>
+    api.post(`/payments/${id}/refund`, { reason }),
   getPaymentHistory: (params?: Record<string, string>) => api.get("/payments/history", { params }),
   getPayment: (id: string) => api.get(`/payments/${id}`),
   getInvoice: (id: string) => api.get(`/payments/${id}/invoice`),

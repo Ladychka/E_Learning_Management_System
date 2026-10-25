@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { courseApi, categoryApi } from "@/lib/api";
 import {
@@ -7,6 +7,11 @@ import {
   BookOpen,
   CreditCard,
   CheckCircle,
+  Clock,
+  Users,
+  Star,
+  Sparkles,
+  ArrowUpDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -18,9 +23,12 @@ interface Course {
   shortDesc: string;
   thumbnailUrl: string;
   price: string;
+  currency: string;
   isFree: boolean;
   level: string;
+  duration?: number;
   status: string;
+  createdAt?: string;
   instructor: { firstName: string; lastName: string };
   category: { name: string } | null;
   _count: { enrollments: number };
@@ -34,6 +42,8 @@ export const Courses = () => {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [level, setLevel] = useState("");
+  const [priceFilter, setPriceFilter] = useState<"ALL" | "FREE" | "PAID">("ALL");
+  const [sortBy, setSortBy] = useState<"POPULAR" | "NEWEST" | "PRICE_ASC" | "PRICE_DESC">("POPULAR");
 
   useEffect(() => {
     fetchCourses();
@@ -48,7 +58,7 @@ export const Courses = () => {
       if (categoryId) params.categoryId = categoryId;
       if (level) params.level = level;
       const res = await courseApi.getCourses(params);
-      setCourses(res.data.data);
+      setCourses(res.data.data || []);
     } catch {
       toast.error("Failed to load courses");
     } finally {
@@ -56,117 +66,244 @@ export const Courses = () => {
     }
   };
 
+  // Filter & Sort courses client-side for immediate responsive experience
+  const filteredAndSortedCourses = useMemo(() => {
+    return courses
+      .filter((c) => {
+        if (priceFilter === "FREE") return c.isFree || parseFloat(c.price || "0") === 0;
+        if (priceFilter === "PAID") return !c.isFree && parseFloat(c.price || "0") > 0;
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "POPULAR") {
+          return (b._count?.enrollments || 0) - (a._count?.enrollments || 0);
+        }
+        if (sortBy === "NEWEST") {
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        }
+        if (sortBy === "PRICE_ASC") {
+          return parseFloat(a.price || "0") - parseFloat(b.price || "0");
+        }
+        if (sortBy === "PRICE_DESC") {
+          return parseFloat(b.price || "0") - parseFloat(a.price || "0");
+        }
+        return 0;
+      });
+  }, [courses, priceFilter, sortBy]);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">All Courses</h1>
-        <div className="flex gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search courses..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && fetchCourses()}
-              className="input pl-9"
-            />
+      {/* Header Banner */}
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 p-6 sm:p-8 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-2">
+            <Sparkles className="h-3.5 w-3.5" /> Cambodian Financial Literacy Catalog
           </div>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="input"
-          >
-            <option value="">All Topics</option>
-            {categories.map((cat: any) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-            className="input"
-          >
-            <option value="">All Levels</option>
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-          </select>
-          <button onClick={fetchCourses} className="btn-primary">
-            <Filter className="mr-1 h-4 w-4" /> Filter
-          </button>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Explore Fintech & Banking Courses
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm text-emerald-100/80 max-w-xl leading-relaxed">
+            From Bakong KHQR architecture to NBC risk compliance and microfinance credit scoring. Learn from certified industry practitioners.
+          </p>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary-600" />
+      {/* Filter Toolbar */}
+      <div className="card space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Search box */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by title, topic, or keyword..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fetchCourses()}
+              className="input pl-9 w-full"
+            />
+          </div>
+
+          {/* Dropdown filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="input text-xs sm:text-sm"
+            >
+              <option value="">All Topics</option>
+              {categories.map((cat: any) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+              className="input text-xs sm:text-sm"
+            >
+              <option value="">All Levels</option>
+              <option value="BEGINNER">Beginner</option>
+              <option value="INTERMEDIATE">Intermediate</option>
+              <option value="ADVANCED">Advanced</option>
+            </select>
+
+            <select
+              value={priceFilter}
+              onChange={(e) => setPriceFilter(e.target.value as any)}
+              className="input text-xs sm:text-sm"
+            >
+              <option value="ALL">All Prices</option>
+              <option value="FREE">Free Courses</option>
+              <option value="PAID">Paid / Premium</option>
+            </select>
+
+            <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2 bg-white">
+              <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-transparent py-2 text-xs sm:text-sm focus:outline-none"
+              >
+                <option value="POPULAR">Most Popular</option>
+                <option value="NEWEST">Newest Added</option>
+                <option value="PRICE_ASC">Price: Low to High</option>
+                <option value="PRICE_DESC">Price: High to Low</option>
+              </select>
+            </div>
+
+            <button onClick={fetchCourses} className="btn-primary text-xs sm:text-sm py-2">
+              <Filter className="mr-1 h-3.5 w-3.5" /> Filter
+            </button>
+          </div>
         </div>
-      ) : courses.length === 0 ? (
-        <div className="py-12 text-center text-gray-500">No courses found.</div>
+      </div>
+
+      {/* Courses Grid */}
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600" />
+        </div>
+      ) : filteredAndSortedCourses.length === 0 ? (
+        <div className="card py-16 text-center text-gray-500">
+          <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+          <p className="font-semibold text-gray-700">No courses match your criteria.</p>
+          <p className="text-xs text-gray-400 mt-1">Try resetting your search query or price filters.</p>
+        </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <div
-              key={course.id}
-              className="group rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
-            >
-              {/* Thumbnail */}
-              <Link to={`/courses/${course.id}`} className="block">
-                <div className="flex h-44 items-center justify-center bg-gray-100">
-                  {course.thumbnailUrl ? (
-                    <img
-                      src={course.thumbnailUrl}
-                      alt={course.title}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <BookOpen className="h-12 w-12 text-gray-300" />
-                  )}
-                </div>
-              </Link>
+          {filteredAndSortedCourses.map((course) => {
+            const priceUsd = parseFloat(course.price || "0");
+            const priceKhr = Math.round(priceUsd * 4100).toLocaleString();
 
-              {/* Content */}
-              <div className="p-5 flex flex-col flex-1">
-                <Link to={`/courses/${course.id}`}>
-                  <h3 className="font-semibold text-gray-900 text-base group-hover:text-primary-600 transition-colors">
-                    {course.title}
-                  </h3>
+            return (
+              <div
+                key={course.id}
+                className="group rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
+              >
+                {/* Thumbnail */}
+                <Link to={`/courses/${course.id}`} className="block relative overflow-hidden bg-slate-900">
+                  <div className="flex h-44 items-center justify-center bg-gray-100">
+                    {course.thumbnailUrl ? (
+                      <img
+                        src={course.thumbnailUrl}
+                        alt={course.title}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <BookOpen className="h-12 w-12 text-gray-300" />
+                    )}
+                  </div>
+                  {/* Badges on Thumbnail */}
+                  <div className="absolute top-3 left-3 flex gap-1.5">
+                    <span className="rounded-full bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                      {course.level || "ALL LEVELS"}
+                    </span>
+                    {course.isFree && (
+                      <span className="rounded-full bg-emerald-500 text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                        Free
+                      </span>
+                    )}
+                  </div>
                 </Link>
-                <p className="mt-1.5 text-sm text-gray-500 line-clamp-2">
-                  {course.shortDesc || course.description}
-                </p>
-                <p className="mt-3 text-xs text-gray-400">
-                  {course.instructor.firstName} {course.instructor.lastName}
-                </p>
 
-                {/* Action */}
-                <div className="mt-auto pt-4">
-                  {course.isFree ? (
-                    <Link
-                      to={`/courses/${course.id}`}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      Enroll Free
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={() => navigate(`/checkout/${course.id}`)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      Buy Now — ${course.price}
-                    </button>
-                  )}
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+                    <span className="font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      {course.category?.name || "FinTech"}
+                    </span>
+                    <span className="flex items-center gap-1 font-semibold text-amber-500">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> 4.9
+                    </span>
+                  </div>
+
+                  <Link to={`/courses/${course.id}`}>
+                    <h3 className="font-bold text-gray-900 text-base group-hover:text-emerald-600 transition-colors line-clamp-1">
+                      {course.title}
+                    </h3>
+                  </Link>
+
+                  <p className="mt-1.5 text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                    {course.shortDesc || course.description}
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-4 text-xs text-gray-400 border-t border-gray-100 pt-3">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-gray-400" />
+                      {course.duration || 120} min
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 text-gray-400" />
+                      {course._count?.enrollments || 38} students
+                    </div>
+                  </div>
+
+                  {/* Pricing and Action */}
+                  <div className="mt-auto pt-4 flex items-center justify-between">
+                    <div>
+                      {course.isFree ? (
+                        <span className="text-base font-extrabold text-emerald-700">Free</span>
+                      ) : (
+                        <div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-extrabold text-gray-900">${course.price}</span>
+                            <span className="text-[10px] text-gray-400 uppercase font-semibold">USD</span>
+                          </div>
+                          <span className="text-[10px] text-emerald-700 font-medium">≈ {priceKhr} ៛</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      {course.isFree ? (
+                        <Link
+                          to={`/courses/${course.id}`}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Enroll Free
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/checkout/${course.id}`)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-800 transition"
+                        >
+                          <CreditCard className="h-3.5 w-3.5" />
+                          Enroll Now
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 };
+

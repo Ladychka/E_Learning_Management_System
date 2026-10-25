@@ -28,6 +28,7 @@ import { CertificateView } from "@/pages/CertificateView";
 import { AuditLogs } from "@/pages/Admin/AuditLogs";
 import { Settings as AdminSettings } from "@/pages/Admin/Settings";
 import { Reports } from "@/pages/Admin/Reports";
+import { FinanceTools } from "@/pages/FinanceTools";
 import { NotFound } from "@/pages/NotFound";
 
 function App() {
@@ -50,6 +51,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Courses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finance-tools"
+            element={
+              <ProtectedRoute>
+                <FinanceTools />
               </ProtectedRoute>
             }
           />

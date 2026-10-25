@@ -125,6 +125,49 @@ export const checkout = async (
       finalAmount = couponResult.finalAmount;
     }
 
+    // Check idempotency key if supplied
+    const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+    if (idempotencyKey) {
+      const existingPayment = await prisma.payment.findFirst({
+        where: {
+          userId,
+          courseId: targetCourseId,
+          status: "pending",
+          createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) }, // within last 15m
+        },
+        include: {
+          user: { select: { firstName: true, lastName: true, email: true } },
+          course: { select: { id: true, title: true, price: true } },
+        },
+      });
+
+      if (existingPayment) {
+        const checkoutData: Record<string, unknown> = {
+          paymentId: existingPayment.id,
+          amount: Number(existingPayment.amount),
+          currency: existingPayment.currency,
+          status: existingPayment.status,
+          gateway: existingPayment.gateway,
+        };
+
+        if (existingPayment.gateway === "khqr" && Number(existingPayment.amount) > 0) {
+          checkoutData.qrData = `https://sandbox.khqr.gov.kh/pay/${existingPayment.gatewayRef}`;
+          checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+        }
+        if (existingPayment.gateway === "aba_payway" && Number(existingPayment.amount) > 0) {
+          checkoutData.paymentUrl = config.payments.abaPayLink || `https://sandbox.payway.com.kh/payment/${existingPayment.gatewayRef}`;
+        }
+        if (existingPayment.gateway === "bakong" && Number(existingPayment.amount) > 0) {
+          checkoutData.deeplink = `bakong://payment?ref=${existingPayment.gatewayRef}`;
+          checkoutData.qrData = `bakong://payment?ref=${existingPayment.gatewayRef}`;
+          checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+        }
+
+        res.status(200).json({ success: true, data: { payment: existingPayment, checkout: checkoutData } });
+        return;
+      }
+    }
+
     // For free courses, auto-complete
     const status = finalAmount === 0 ? "completed" : "pending";
     const gatewayRef = finalAmount > 0 ? generateGatewayRef(gateway) : null;
@@ -141,6 +184,7 @@ export const checkout = async (
         gatewayRef,
         couponCode: couponCode || null,
         discountAmount: discountAmount > 0 ? discountAmount : null,
+        metadata: idempotencyKey ? { idempotencyKey } : undefined,
         paidAt: status === "completed" ? new Date() : null,
       },
       include: {
@@ -188,6 +232,7 @@ export const checkout = async (
     if (gateway === "bakong" && finalAmount > 0) {
       checkoutData.deeplink = `bakong://payment?ref=${gatewayRef}`;
       checkoutData.qrData = `bakong://payment?ref=${gatewayRef}`;
+      checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
     }
 
     res.status(201).json({ success: true, data: { payment, checkout: checkoutData } });

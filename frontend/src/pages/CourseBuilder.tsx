@@ -15,6 +15,9 @@ import {
   Loader2,
   Save,
   CheckCircle,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
   ArrowLeft,
   Settings,
   EyeOff,
@@ -527,6 +530,90 @@ export const CourseBuilder = () => {
           </button>
         </div>
       </div>
+
+      {/* Course Completeness Score Meter (B6) */}
+      {(() => {
+        const allLessons = modules.flatMap((m) => m.lessons);
+        const checklist = [
+          { label: "Basic details (Title & Description)", pass: Boolean(course?.title && course?.description), tip: "Define complete title and overview" },
+          { label: "Financial category assigned", pass: Boolean(course?.category || course?.categoryId), tip: "Assign a topic category in Settings" },
+          { label: "Thumbnail banner uploaded", pass: Boolean(course?.thumbnailUrl), tip: "Upload course cover in Settings" },
+          { label: "Curriculum modules structured", pass: modules.length > 0, tip: "Add at least 1 module" },
+          { label: "Learning content (Lessons)", pass: allLessons.length > 0, tip: "Add at least 1 lesson" },
+          { label: "Pricing configured", pass: Boolean(course?.isFree || (course?.price && parseFloat(course.price) > 0)), tip: "Set price or mark free" },
+          { label: "Interactive assessment (Quiz)", pass: allLessons.some(l => l.contentType === "quiz" || l.quiz), tip: "Add a quiz to assess student comprehension" },
+        ];
+        const passedCount = checklist.filter((c) => c.pass).length;
+        const score = Math.round((passedCount / checklist.length) * 100);
+
+        return (
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-emerald-600" />
+                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                    Course Readiness & Quality Score
+                  </h2>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Complete all key benchmarks before publishing your course to the student catalog.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <span className={`text-xl font-extrabold ${score === 100 ? "text-emerald-600" : score >= 70 ? "text-amber-600" : "text-rose-600"}`}>
+                    {score}%
+                  </span>
+                  <span className="text-xs text-gray-400 block font-medium">
+                    {passedCount} of {checklist.length} completed
+                  </span>
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                  score === 100
+                    ? "bg-emerald-100 text-emerald-800"
+                    : score >= 70
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-rose-100 text-rose-800"
+                }`}>
+                  {score === 100 ? "Ready to Launch" : score >= 70 ? "Almost Ready" : "Draft In Progress"}
+                </span>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden mb-4">
+              <div
+                className={`h-full transition-all duration-500 rounded-full ${
+                  score === 100 ? "bg-emerald-500" : score >= 70 ? "bg-amber-500" : "bg-rose-500"
+                }`}
+                style={{ width: `${score}%` }}
+              />
+            </div>
+
+            {/* Checklist Badges */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pt-1 border-t border-gray-100">
+              {checklist.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-start gap-2 p-2 rounded-lg text-xs transition ${
+                    item.pass ? "bg-emerald-50/70 text-emerald-900 border border-emerald-100" : "bg-gray-50 text-gray-500 border border-gray-100"
+                  }`}
+                  title={item.tip}
+                >
+                  {item.pass ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  )}
+                  <span className="leading-tight font-medium">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Module Form */}
       {showModuleForm && (

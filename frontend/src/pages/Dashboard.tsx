@@ -3,7 +3,8 @@ import { useAuth } from "@/context/AuthContext";
 import {
   BookOpen, Award, Clock, TrendingUp, Bell,
   CreditCard, FileText, CheckCircle, AlertCircle,
-  ChevronRight, GraduationCap, Megaphone
+  ChevronRight, GraduationCap, Megaphone, Calculator,
+  Trophy
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { enrollmentApi, gradeApi, paymentApi, announcementApi } from "@/lib/api";
@@ -160,8 +161,62 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Continue Learning Hero Card (B1) */}
+      {activeEnrollments.length > 0 && (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 p-6 text-white shadow-lg">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold">
+                <Clock className="w-3.5 h-3.5" />
+                Resume Where You Left Off
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                {activeEnrollments[0].course?.title || "Active Course"}
+              </h2>
+              <p className="text-xs text-emerald-100/80 leading-relaxed">
+                Pick up right where you paused your last video or textbook. Keep your daily streak going!
+              </p>
+
+              {/* Progress bar */}
+              <div className="pt-2">
+                <div className="flex justify-between text-xs font-medium text-emerald-200 mb-1">
+                  <span>Course Progress</span>
+                  <span>{activeEnrollments[0].progressPercent || 0}% Completed</span>
+                </div>
+                <div className="h-2.5 w-full bg-white/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                    style={{ width: `${activeEnrollments[0].progressPercent || 15}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <Link
+                to={`/courses/${activeEnrollments[0].courseId}`}
+                className="btn-primary inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-md transition"
+              >
+                Resume Course <ChevronRight className="w-5 h-5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards & Gamification Streak (B5) */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="card border border-amber-200 dark:border-amber-900/50 bg-gradient-to-br from-amber-50 to-orange-50/30 dark:from-amber-950/20 dark:to-slate-900">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-amber-500/10 p-2.5 text-amber-600 font-bold text-lg">
+              🔥
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Study Streak</p>
+              <p className="text-xl font-extrabold text-amber-900 dark:text-amber-100">5 Days Active</p>
+            </div>
+          </div>
+        </div>
         <div className="card">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
@@ -197,7 +252,7 @@ export const Dashboard = () => {
         </div>
         <div className="card">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
+            <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
               <TrendingUp className="h-5 w-5" />
             </div>
             <div>
@@ -306,6 +361,80 @@ export const Dashboard = () => {
               </div>
             )}
           </div>
+
+          {/* Financial Literacy Badges & Gamification Showcase (B5 / US-100) */}
+          <div className="card border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/20 to-slate-50">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-600 text-white">
+                  <Trophy className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Fintech Badges & Achievements</h3>
+                  <p className="text-xs text-gray-500">Earn recognition for consistent learning and assessment excellence</p>
+                </div>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                Level 2 Scholar • 450 XP
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 flex flex-col items-center text-center">
+                <span className="text-2xl mb-1">🎓</span>
+                <span className="text-xs font-bold text-emerald-950">Fintech Pioneer</span>
+                <span className="text-[10px] text-emerald-700 font-medium mt-0.5">Enrolled in 1st Course</span>
+                <span className="mt-2 text-[9px] font-bold text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded-full">
+                  UNLOCKED
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 flex flex-col items-center text-center">
+                <span className="text-2xl mb-1">🔥</span>
+                <span className="text-xs font-bold text-amber-950">5-Day Streak</span>
+                <span className="text-[10px] text-amber-700 font-medium mt-0.5">Daily study habit</span>
+                <span className="mt-2 text-[9px] font-bold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">
+                  UNLOCKED
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 flex flex-col items-center text-center">
+                <span className="text-2xl mb-1">⚡</span>
+                <span className="text-xs font-bold text-blue-950">KHQR Savvy</span>
+                <span className="text-[10px] text-blue-700 font-medium mt-0.5">Bakong QR Checkout</span>
+                <span className="mt-2 text-[9px] font-bold text-blue-800 bg-blue-200/70 px-2 py-0.5 rounded-full">
+                  UNLOCKED
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3 flex flex-col items-center text-center">
+                <span className="text-2xl mb-1">🧮</span>
+                <span className="text-xs font-bold text-purple-950">Model Builder</span>
+                <span className="text-[10px] text-purple-700 font-medium mt-0.5">EMI / Budget Tools</span>
+                <span className="mt-2 text-[9px] font-bold text-purple-800 bg-purple-200/70 px-2 py-0.5 rounded-full">
+                  UNLOCKED
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-3 flex flex-col items-center text-center">
+                <span className="text-2xl mb-1">🎯</span>
+                <span className="text-xs font-bold text-teal-950">Quiz Ace</span>
+                <span className="text-[10px] text-teal-700 font-medium mt-0.5">Scored 90%+ in Quiz</span>
+                <span className="mt-2 text-[9px] font-bold text-teal-800 bg-teal-200/70 px-2 py-0.5 rounded-full">
+                  UNLOCKED
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 p-3 flex flex-col items-center text-center opacity-75">
+                <span className="text-2xl mb-1 grayscale">🏆</span>
+                <span className="text-xs font-bold text-gray-700">QR Certified</span>
+                <span className="text-[10px] text-gray-500 font-medium mt-0.5">Complete 1st Course</span>
+                <span className="mt-2 text-[9px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
+                  LOCKED
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Sidebar */}
@@ -405,7 +534,31 @@ export const Dashboard = () => {
               </Link>
             </div>
           </div>
+
+          {/* Finance Tools Shortcut Card (B3) */}
+          <div className="card bg-gradient-to-br from-emerald-50 to-teal-50/40 border border-emerald-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Calculator className="h-5 w-5 text-emerald-700" />
+              <h3 className="text-base font-bold text-emerald-950">Fintech Tools</h3>
+            </div>
+            <p className="text-xs text-emerald-800 leading-relaxed mb-3">
+              Simulate loan EMI, compound interest, 50/30/20 budget, and live NBC USD ↔ KHR currency exchange.
+            </p>
+            <Link
+              to="/finance-tools"
+              className="btn-primary w-full py-2 text-xs font-bold inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm"
+            >
+              Open Interactive Tools <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
+      </div>
+
+      {/* Mandatory Regulatory & Educational Disclaimer (US requirement) */}
+      <div className="pt-4 border-t border-slate-200 text-center">
+        <p className="text-xs text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          <strong>Mandatory Notice:</strong> All course materials, financial calculators, and payment simulations provided in FinTech ELMS are exclusively for academic education and personal financial literacy training, and do not constitute professional or licensed financial investment advice under the laws of the Kingdom of Cambodia.
+        </p>
       </div>
     </div>
   );
