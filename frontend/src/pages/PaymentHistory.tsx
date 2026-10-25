@@ -126,12 +126,20 @@ export function PaymentHistory() {
                       : new Date(payment.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      to={`/payments/${payment.id}`}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      View
-                    </Link>
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        to={`/payments/${payment.id}`}
+                        className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+                      >
+                        Details
+                      </Link>
+                      <Link
+                        to={`/payments/${payment.id}/invoice`}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition"
+                      >
+                        Invoice
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -23,6 +23,7 @@ import { Gradebook } from "@/pages/Admin/Gradebook";
 import { Checkout } from "@/pages/Checkout";
 import { PaymentHistory } from "@/pages/PaymentHistory";
 import { PaymentDetail } from "@/pages/PaymentDetail";
+import { Invoice } from "@/pages/Invoice";
 import { AssignmentDetail } from "@/pages/AssignmentDetail";
 import { MyCertificates } from "@/pages/MyCertificates";
 import { CertificateView } from "@/pages/CertificateView";
@@ -189,6 +190,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <PaymentDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments/:id/invoice"
+            element={
+              <ProtectedRoute>
+                <Invoice />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invoices/:id"
+            element={
+              <ProtectedRoute>
+                <Invoice />
               </ProtectedRoute>
             }
           />
