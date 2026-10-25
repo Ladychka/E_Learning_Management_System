@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createEnrollmentSchema = z.object({
   userId: z.string().uuid().optional(), // optional for self-enroll; admin can specify
-  courseId: z.string().uuid(),
+  courseId: z.string().min(1),
   expiresAt: z.string().datetime().optional(),
 });
 

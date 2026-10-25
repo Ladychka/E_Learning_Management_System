@@ -106,6 +106,202 @@ async function seed() {
     console.log("Sample finance course seeded");
   }
 
+  // ─── Seed Category for Digital Finance ───
+  const digitalFinance = await prisma.category.upsert({
+    where: { slug: "digital-finance" },
+    update: {
+      name: "Digital Finance & Banking",
+      description: "Cambodian fintech, Bakong, KHQR, and digital payment systems",
+      sortOrder: 5,
+    },
+    create: {
+      name: "Digital Finance & Banking",
+      slug: "digital-finance",
+      description: "Cambodian fintech, Bakong, KHQR, and digital payment systems",
+      sortOrder: 5,
+    },
+  });
+
+  const courseCategory = digitalFinance || stockTrading;
+
+  // ─── 1. Free Course: Introduction to Digital Finance in Cambodia (Free) ───
+  const freeCourse = await prisma.course.upsert({
+    where: { slug: "intro-to-digital-finance-cambodia-free" },
+    update: {
+      title: "Introduction to Digital Finance in Cambodia (Free)",
+      price: 0.00,
+      currency: "USD",
+      isFree: true,
+      status: "PUBLISHED",
+      categoryId: courseCategory.id,
+    },
+    create: {
+      title: "Introduction to Digital Finance in Cambodia (Free)",
+      slug: "intro-to-digital-finance-cambodia-free",
+      description: "Explore Cambodia's modern digital banking transformation, the National Bank of Cambodia (NBC) Bakong rails, and how KHQR is reshaping the Kingdom's cashless economy.",
+      shortDesc: "Free foundational guide to Cambodian digital banking, NBC Bakong rails, and cashless financial technology.",
+      status: "PUBLISHED",
+      price: 0.00,
+      currency: "USD",
+      isFree: true,
+      level: "BEGINNER",
+      duration: 90,
+      language: "en",
+      prerequisites: [],
+      learningOutcomes: [
+        "Understand Bakong and KHQR architectural specifications",
+        "Evaluate digital banking security & consumer rights in Cambodia",
+        "Navigate cashless merchant workflows and wallet integrations",
+      ],
+      tags: ["fintech", "cambodia", "khqr", "bakong", "digital-finance", "free"],
+      publishedAt: new Date(),
+      instructorId: instructor.id,
+      categoryId: courseCategory.id,
+    },
+  });
+
+  let freeModule = await prisma.module.findFirst({
+    where: { courseId: freeCourse.id, title: "Module 1: Foundations of Cambodian Digital Finance" },
+  });
+  if (!freeModule) {
+    freeModule = await prisma.module.create({
+      data: {
+        courseId: freeCourse.id,
+        title: "Module 1: Foundations of Cambodian Digital Finance",
+        description: "Core concepts of cashless banking and fintech infrastructure in Cambodia.",
+        sortOrder: 0,
+        isPublished: true,
+      },
+    });
+  }
+
+  const freeLessons = [
+    {
+      title: "Lesson 1: The Cashless Transition & NBC Bakong Rails",
+      description: "A deep dive into how Cambodia transitioned from cash to Bakong interoperability.",
+      contentType: "video",
+      contentUrl: "https://www.youtube.com/embed/UB1O30fR-EE",
+      duration: 15,
+      isPublished: true,
+      isPreview: true,
+      sortOrder: 0,
+    },
+    {
+      title: "Lesson 2: Overview of Mobile Banking Apps & KHQR Adoption",
+      description: "Practical analysis of consumer banking apps (ABA, ACLEDA, Wing) and unified QR codes.",
+      contentType: "text",
+      contentUrl: null,
+      duration: 20,
+      isPublished: true,
+      isPreview: false,
+      sortOrder: 1,
+    },
+  ];
+
+  for (const lessonData of freeLessons) {
+    const existingLesson = await prisma.lesson.findFirst({
+      where: { moduleId: freeModule.id, title: lessonData.title },
+    });
+    if (!existingLesson) {
+      await prisma.lesson.create({
+        data: {
+          moduleId: freeModule.id,
+          ...lessonData,
+        },
+      });
+    } else {
+      await prisma.lesson.update({
+        where: { id: existingLesson.id },
+        data: lessonData,
+      });
+    }
+  }
+  console.log("Free course seeded:", freeCourse.title);
+
+  // ─── 2. Payment Test Course: KHQR Payment Test Course ($0.10) ───
+  const paidCourse = await prisma.course.upsert({
+    where: { slug: "khqr-payment-test-course" },
+    update: {
+      title: "KHQR Payment Test Course",
+      price: 0.10,
+      currency: "USD",
+      isFree: false,
+      status: "PUBLISHED",
+      categoryId: courseCategory.id,
+    },
+    create: {
+      title: "KHQR Payment Test Course",
+      slug: "khqr-payment-test-course",
+      description: "Official sandbox testing course for verifying end-to-end KHQR dynamic payments, Bakong mobile app deeplinks, and 3-second webhook confirmation polling.",
+      shortDesc: "Sandbox test course priced at 0.10 USD (≈ 410 KHR at 4,100 KHR/USD) for KHQR payment flow verification.",
+      status: "PUBLISHED",
+      price: 0.10,
+      currency: "USD",
+      isFree: false,
+      level: "BEGINNER",
+      duration: 45,
+      language: "en",
+      prerequisites: [],
+      learningOutcomes: [
+        "Test Bakong KHQR dynamic QR generation",
+        "Verify 5-minute checkout countdown and 3-second status polling",
+        "Simulate sandbox webhook transaction confirmations",
+      ],
+      tags: ["khqr", "payment-test", "bakong", "sandbox", "fintech"],
+      publishedAt: new Date(),
+      instructorId: instructor.id,
+      categoryId: courseCategory.id,
+    },
+  });
+
+  let paidModule = await prisma.module.findFirst({
+    where: { courseId: paidCourse.id, title: "Module 1: KHQR Payment Rails & Verification" },
+  });
+  if (!paidModule) {
+    paidModule = await prisma.module.create({
+      data: {
+        courseId: paidCourse.id,
+        title: "Module 1: KHQR Payment Rails & Verification",
+        description: "Payment integration architecture and testing procedures.",
+        sortOrder: 0,
+        isPublished: true,
+      },
+    });
+  }
+
+  const paidLessons = [
+    {
+      title: "Lesson 1: End-to-End KHQR Transaction Flow & Webhooks",
+      description: "Understanding transaction states from pending to completed via Bakong sandbox simulation.",
+      contentType: "video",
+      contentUrl: "https://www.youtube.com/embed/UB1O30fR-EE",
+      duration: 15,
+      isPublished: true,
+      isPreview: false,
+      sortOrder: 0,
+    },
+  ];
+
+  for (const lessonData of paidLessons) {
+    const existingLesson = await prisma.lesson.findFirst({
+      where: { moduleId: paidModule.id, title: lessonData.title },
+    });
+    if (!existingLesson) {
+      await prisma.lesson.create({
+        data: {
+          moduleId: paidModule.id,
+          ...lessonData,
+        },
+      });
+    } else {
+      await prisma.lesson.update({
+        where: { id: existingLesson.id },
+        data: lessonData,
+      });
+    }
+  }
+  console.log("Payment test course seeded:", paidCourse.title);
+
   console.log("✅ Seed completed");
 }
 

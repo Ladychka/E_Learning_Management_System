@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const checkoutSchema = z.object({
-  courseId: z.string().uuid().optional(),
+  courseId: z.string().min(1).optional(),
   subscriptionId: z.string().uuid().optional(),
   gateway: z.enum(["khqr", "aba_payway", "bakong"]),
   couponCode: z.string().optional(),
 });
 
 export const confirmPaymentSchema = z.object({
-  gatewayRef: z.string().min(1),
+  gatewayRef: z.string().optional(),
   status: z.enum(["completed", "failed"]),
 });
 

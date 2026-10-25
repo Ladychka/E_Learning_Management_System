@@ -73,6 +73,11 @@ export const CourseDetail = () => {
       navigate("/login");
       return;
     }
+    const isFreeCourse = Boolean(course?.isFree) || parseFloat(course?.price || "0") === 0;
+    if (isFreeCourse) {
+      handleEnroll();
+      return;
+    }
     navigate(`/checkout/${course?.id || id}`);
   };
 
@@ -91,6 +96,7 @@ export const CourseDetail = () => {
   // Cambodian Riel exchange rate conversion: 4,100 KHR / 1 USD
   const priceUsd = parseFloat(course.price || "0");
   const priceKhr = Math.round(priceUsd * 4100).toLocaleString();
+  const isFreeCourse = Boolean(course.isFree) || priceUsd === 0;
 
   // FAQs
   const faqs = [
@@ -214,7 +220,7 @@ export const CourseDetail = () => {
                   <CheckCircle className="h-5 w-5" />
                   You're Enrolled — Start Learning
                 </button>
-              ) : course.isFree ? (
+              ) : isFreeCourse ? (
                 <button
                   onClick={handleEnroll}
                   disabled={enrolling}
@@ -236,7 +242,7 @@ export const CourseDetail = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-extrabold text-gray-900">${course.price}</span>
+                      <span className="text-3xl font-extrabold text-gray-900">${priceUsd.toFixed(2)}</span>
                       <span className="text-xs font-semibold uppercase text-gray-500">USD</span>
                     </div>
                     <p className="text-xs text-emerald-700 font-medium">
@@ -543,9 +549,9 @@ export const CourseDetail = () => {
             <p className="text-xs text-gray-500 line-clamp-1">{course.title}</p>
             <div className="flex items-baseline gap-2">
               <span className="text-lg font-bold text-gray-900">
-                {course.isFree ? "Free" : `$${course.price} USD`}
+                {isFreeCourse ? "Free" : `$${priceUsd.toFixed(2)} USD`}
               </span>
-              {!course.isFree && (
+              {!isFreeCourse && (
                 <span className="text-xs text-emerald-700 font-medium">
                   (≈ {priceKhr} ៛)
                 </span>
@@ -565,7 +571,7 @@ export const CourseDetail = () => {
               >
                 <CheckCircle className="h-4 w-4" /> Go to Course Player
               </button>
-            ) : course.isFree ? (
+            ) : isFreeCourse ? (
               <button
                 onClick={handleEnroll}
                 disabled={enrolling}
@@ -578,7 +584,7 @@ export const CourseDetail = () => {
                 onClick={handleBuy}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition"
               >
-                <CreditCard className="h-4 w-4" /> Enroll Now • ${course.price}
+                <CreditCard className="h-4 w-4" /> Enroll Now • ${priceUsd.toFixed(2)}
               </button>
             )}
           </div>

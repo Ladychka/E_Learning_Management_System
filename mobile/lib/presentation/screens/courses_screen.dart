@@ -145,29 +145,34 @@ class _CoursesScreenState extends State<CoursesScreen> {
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: course.isFree
-                                          ? Colors.green[50]
-                                          : Colors.blue[50],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      course.isFree
-                                          ? 'Free'
-                                          : '${course.currency} ${course.price?.toStringAsFixed(2) ?? '0'}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: course.isFree
-                                            ? Colors.green[800]
-                                            : Colors.blue[800],
-                                      ),
-                                    ),
+                                  Builder(
+                                    builder: (context) {
+                                      final isCourseFree = course.isFree || (course.price ?? 0) == 0;
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isCourseFree
+                                              ? Colors.green[50]
+                                              : Colors.blue[50],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          isCourseFree
+                                              ? 'Free'
+                                              : '${course.currency} ${course.price?.toStringAsFixed(2) ?? '0.00'}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: isCourseFree
+                                                ? Colors.green[800]
+                                                : Colors.blue[800],
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                   if (course.level != null) ...[
                                     const SizedBox(width: 8),

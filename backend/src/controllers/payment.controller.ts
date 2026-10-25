@@ -98,11 +98,15 @@ export const checkout = async (
     let targetCourseId: string | null = courseId || null;
 
     if (courseId) {
-      const course = await prisma.course.findUnique({ where: { id: courseId } });
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId);
+      const course = await prisma.course.findFirst({
+        where: isUuid ? { OR: [{ id: courseId }, { slug: courseId }] } : { slug: courseId },
+      });
       if (!course) throw new AppError("Course not found", 404);
       if (course.status !== "PUBLISHED") {
         throw new AppError("Course is not available for purchase", 400);
       }
+      targetCourseId = course.id;
       amount = course.price ? Number(course.price) : 0;
       currency = course.currency || "USD";
       if (course.isFree) amount = 0;
@@ -262,7 +266,9 @@ export const confirmPayment = async (
     const updateData: Record<string, unknown> = { status };
     if (status === "completed") {
       updateData.paidAt = new Date();
-      updateData.gatewayRef = gatewayRef;
+      if (gatewayRef) {
+        updateData.gatewayRef = gatewayRef;
+      }
     }
 
     const updated = await prisma.payment.update({

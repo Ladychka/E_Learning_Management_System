@@ -16,7 +16,7 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-import { courseApi, paymentApi } from "@/lib/api";
+import { courseApi, paymentApi, enrollmentApi } from "@/lib/api";
 
 interface Course {
   id: string;
@@ -64,7 +64,19 @@ export function Checkout() {
       const res = await courseApi.getCourse(courseId!);
       const c = res.data.data;
       setCourse(c);
-      const price = c.isFree ? 0 : Number(c.price || 0);
+      const isFreeCourse = Boolean(c.isFree) || Number(c.price || 0) === 0;
+      if (isFreeCourse) {
+        // Free course behavior: with price 0, "Enroll Now" must enroll directly and not open checkout or KHQR
+        try {
+          await enrollmentApi.selfEnroll(c.id || courseId!);
+          toast.success("Free course enrolled successfully!");
+        } catch {
+          // If already enrolled or requires login, let navigation proceed
+        }
+        navigate(`/courses/${c.id || courseId}`);
+        return;
+      }
+      const price = Number(c.price || 0);
       setOriginalPrice(price);
       setFinalPrice(price);
     } catch {
@@ -166,7 +178,10 @@ export function Checkout() {
     if (!paymentId) return;
     try {
       setIsVerifying(true);
-      const res = await paymentApi.confirmPayment(paymentId, { status: "completed" });
+      const res = await paymentApi.confirmPayment(paymentId, {
+        status: "completed",
+        gatewayRef: `SANDBOX-WEB-${Date.now()}`,
+      });
       if (res.data.data?.status === "completed") {
         setPaymentStatus("completed");
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
@@ -254,11 +269,11 @@ export function Checkout() {
                   <div className="flex items-baseline gap-2">
                     {discount > 0 && (
                       <span className="text-slate-400 line-through text-xs">
-                        ${originalPrice} {course.currency}
+                        ${originalPrice.toFixed(2)} {course.currency}
                       </span>
                     )}
                     <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                      ${finalPrice} {course.currency}
+                      ${finalPrice.toFixed(2)} {course.currency}
                     </span>
                     <span className="text-xs text-slate-500">
                       (≈ {(finalPrice * 4100).toLocaleString()} ៛ KHR)
@@ -322,7 +337,7 @@ export function Checkout() {
                 </div>
                 {discount > 0 && (
                   <p className="text-xs text-emerald-600 font-semibold mt-1.5">
-                    ✓ Discount applied: -${discount} {course.currency}
+                    ✓ Discount applied: -${discount.toFixed(2)} {course.currency}
                   </p>
                 )}
               </div>

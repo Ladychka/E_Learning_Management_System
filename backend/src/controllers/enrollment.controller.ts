@@ -27,6 +27,17 @@ export const selfEnroll = async (
       // Future: verify student has completed prerequisite courses
     }
 
+    // Free courses enroll directly; paid courses require completed payment
+    const isFree = course.isFree || !course.price || Number(course.price) === 0;
+    if (!isFree) {
+      const payment = await prisma.payment.findFirst({
+        where: { userId, courseId, status: "completed" },
+      });
+      if (!payment) {
+        throw new AppError("This is a paid course. Please complete payment via KHQR or card to enroll.", 402);
+      }
+    }
+
     // Check if already enrolled
     const existing = await prisma.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },

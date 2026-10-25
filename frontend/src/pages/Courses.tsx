@@ -214,6 +214,7 @@ export const Courses = () => {
           {filteredAndSortedCourses.map((course) => {
             const priceUsd = parseFloat(course.price || "0");
             const priceKhr = Math.round(priceUsd * 4100).toLocaleString();
+            const isFreeCourse = Boolean(course.isFree) || priceUsd === 0;
 
             return (
               <div
@@ -238,7 +239,7 @@ export const Courses = () => {
                     <span className="rounded-full bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                       {course.level || "ALL LEVELS"}
                     </span>
-                    {course.isFree && (
+                    {isFreeCourse && (
                       <span className="rounded-full bg-emerald-500 text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                         Free
                       </span>
@@ -281,12 +282,12 @@ export const Courses = () => {
                   {/* Pricing and Action */}
                   <div className="mt-auto pt-4 flex items-center justify-between">
                     <div>
-                      {course.isFree ? (
+                      {isFreeCourse ? (
                         <span className="text-base font-extrabold text-emerald-700">Free</span>
                       ) : (
                         <div>
                           <div className="flex items-baseline gap-1">
-                            <span className="text-lg font-extrabold text-gray-900">${course.price}</span>
+                            <span className="text-lg font-extrabold text-gray-900">${priceUsd.toFixed(2)}</span>
                             <span className="text-[10px] text-gray-400 uppercase font-semibold">USD</span>
                           </div>
                           <span className="text-[10px] text-emerald-700 font-medium">≈ {priceKhr} ៛</span>
@@ -295,7 +296,7 @@ export const Courses = () => {
                     </div>
 
                     <div>
-                      {course.isFree ? (
+                      {isFreeCourse ? (
                         <Link
                           to={`/courses/${course.id}`}
                           className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition"
