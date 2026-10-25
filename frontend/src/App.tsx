@@ -25,6 +25,9 @@ import { PaymentDetail } from "@/pages/PaymentDetail";
 import { AssignmentDetail } from "@/pages/AssignmentDetail";
 import { MyCertificates } from "@/pages/MyCertificates";
 import { CertificateView } from "@/pages/CertificateView";
+import { AuditLogs } from "@/pages/Admin/AuditLogs";
+import { Settings as AdminSettings } from "@/pages/Admin/Settings";
+import { Reports } from "@/pages/Admin/Reports";
 import { NotFound } from "@/pages/NotFound";
 
 function App() {
@@ -202,7 +205,32 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/reports"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "INSTRUCTOR"]}>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AuditLogs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminSettings />
+              </ProtectedRoute>
+            }
+          />
         </Route>
+        <Route path="/verify/:certificateNumber" element={<CertificateView />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>

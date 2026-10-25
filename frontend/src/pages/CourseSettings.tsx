@@ -1,12 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { courseApi, uploadApi } from "@/lib/api";
+import { courseApi, uploadApi, gradeCategoryApi } from "@/lib/api";
 import {
   ArrowLeft,
   Save,
   Loader2,
   Image,
   X,
+  Plus,
+  Trash2,
+  Scale,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -74,8 +79,68 @@ export const CourseSettings = () => {
     }
   };
 
+  const [gradeCategories, setGradeCategories] = useState<any[]>([]);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatWeight, setNewCatWeight] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
+
+  const fetchGradeCategories = async () => {
+    if (!courseId) return;
+    try {
+      const res = await gradeCategoryApi.getGradeCategories(courseId);
+      setGradeCategories(res.data.data || []);
+    } catch {
+      // Optional/quiet
+    }
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim() || !newCatWeight) {
+      toast.error("Please enter category name and percentage weight");
+      return;
+    }
+    const weightNum = parseInt(newCatWeight, 10);
+    if (isNaN(weightNum) || weightNum <= 0 || weightNum > 100) {
+      toast.error("Weight must be between 1 and 100%");
+      return;
+    }
+    const totalCurrent = gradeCategories.reduce((sum, c) => sum + (c.weight || 0), 0);
+    if (totalCurrent + weightNum > 100) {
+      toast.error(`Total weight cannot exceed 100% (currently ${totalCurrent}%)`);
+      return;
+    }
+
+    setAddingCategory(true);
+    try {
+      await gradeCategoryApi.createGradeCategory(courseId!, {
+        name: newCatName.trim(),
+        weight: weightNum,
+      });
+      setNewCatName("");
+      setNewCatWeight("");
+      toast.success("Grade weighting category added");
+      fetchGradeCategories();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to add category");
+    } finally {
+      setAddingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      await gradeCategoryApi.deleteGradeCategory(id);
+      toast.success("Category removed");
+      fetchGradeCategories();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete category");
+    }
+  };
+
   useEffect(() => {
     fetchCourse();
+    fetchGradeCategories();
   }, [courseId]);
 
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -350,6 +415,138 @@ export const CourseSettings = () => {
               onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
               className="input mt-1"
             />
+          </div>
+        </div>
+
+        {/* Grade Weighting Categories (US-053) */}
+        <div className="card space-y-4 border border-slate-200 dark:border-slate-800 p-6 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scale className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-base font-semibold">Grade Weighting Categories (US-053)</h3>
+            </div>
+            {(() => {
+              const total = gradeCategories.reduce((sum, c) => sum + (c.weight || 0), 0);
+              const is100 = total === 100;
+              return (
+                <div
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                    is100
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                  }`}
+                >
+                  {is100 ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  )}
+                  Total Weight: {total}% / 100%
+                </div>
+              );
+            })()}
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Configure weighted categories for this course (e.g., Assignments 40%, Quizzes 30%, Final Project 30%). Categories must total exactly 100% to calculate the final course GPA.
+          </p>
+
+          {/* Progress bar */}
+          {(() => {
+            const total = gradeCategories.reduce((sum, c) => sum + (c.weight || 0), 0);
+            return (
+              <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 ${
+                    total === 100
+                      ? "bg-emerald-500"
+                      : total > 100
+                      ? "bg-rose-500"
+                      : "bg-indigo-500"
+                  }`}
+                  style={{ width: `${Math.min(total, 100)}%` }}
+                />
+              </div>
+            );
+          })()}
+
+          {/* Existing Categories Table */}
+          {gradeCategories.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800/60 text-xs font-medium text-slate-500 uppercase">
+                  <tr>
+                    <th className="px-4 py-2.5">Category Name</th>
+                    <th className="px-4 py-2.5">Weight (%)</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {gradeCategories.map((cat) => (
+                    <tr key={cat.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td className="px-4 py-2.5 font-medium">{cat.name}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="inline-block px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
+                          {cat.weight}%
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="text-rose-500 hover:text-rose-700 p-1 rounded"
+                          title="Delete category"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-4 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-500">
+              No weighting categories configured yet. Add categories below.
+            </div>
+          )}
+
+          {/* Add Category Form */}
+          <div className="flex flex-wrap items-end gap-3 pt-2">
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-medium mb-1">New Category Name</label>
+              <input
+                type="text"
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                placeholder="e.g., Final Examination"
+                className="input py-1.5 text-sm"
+              />
+            </div>
+            <div className="w-28">
+              <label className="block text-xs font-medium mb-1">Weight (%)</label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={newCatWeight}
+                onChange={(e) => setNewCatWeight(e.target.value)}
+                placeholder="30"
+                className="input py-1.5 text-sm"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={addingCategory}
+              onClick={handleAddCategory}
+              className="btn-secondary py-1.5 text-sm inline-flex items-center gap-1.5"
+            >
+              {addingCategory ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
+              Add Category
+            </button>
           </div>
         </div>
 

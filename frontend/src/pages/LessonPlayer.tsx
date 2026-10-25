@@ -15,6 +15,8 @@ import {
   X,
   ExternalLink,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { LessonDiscussion } from "@/components/LessonDiscussion";
 import toast from "react-hot-toast";
 
 interface LessonSummary {
@@ -64,6 +66,7 @@ interface Lesson {
 export const LessonPlayer = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFullscreenPdf, setIsFullscreenPdf] = useState(false);
@@ -442,6 +445,11 @@ export const LessonPlayer = () => {
             ) : (
               <span />
             )}
+          </div>
+
+          {/* Lesson Discussion & Q&A */}
+          <div className="mt-8 rounded-xl border bg-white p-6 shadow-sm">
+            <LessonDiscussion lessonId={lesson.id} currentUserId={user?.id} />
           </div>
         </div>
 

@@ -3,10 +3,10 @@ import { useAuth } from "@/context/AuthContext";
 import {
   BookOpen, Award, Clock, TrendingUp, Bell,
   CreditCard, FileText, CheckCircle, AlertCircle,
-  ChevronRight, GraduationCap
+  ChevronRight, GraduationCap, Megaphone
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { enrollmentApi, gradeApi, paymentApi } from "@/lib/api";
+import { enrollmentApi, gradeApi, paymentApi, announcementApi } from "@/lib/api";
 import toast from "react-hot-toast";
 
 interface Enrollment {
@@ -44,6 +44,7 @@ export const Dashboard = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,10 +54,11 @@ export const Dashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [enrollRes, gradeRes, paymentRes] = await Promise.allSettled([
+      const [enrollRes, gradeRes, paymentRes, announceRes] = await Promise.allSettled([
         enrollmentApi.getMyEnrollments(),
         gradeApi.getMyGrades(),
         paymentApi.getPaymentHistory(),
+        announcementApi.getMyAnnouncements(),
       ]);
       if (enrollRes.status === "fulfilled") {
         setEnrollments(enrollRes.value.data.data || []);
@@ -66,6 +68,9 @@ export const Dashboard = () => {
       }
       if (paymentRes.status === "fulfilled") {
         setPayments(paymentRes.value.data.data || []);
+      }
+      if (announceRes.status === "fulfilled") {
+        setAnnouncements(announceRes.value.data.data || []);
       }
     } catch {
       toast.error("Failed to load dashboard data");
@@ -103,6 +108,57 @@ export const Dashboard = () => {
           Here's what's happening in your learning journey.
         </p>
       </div>
+
+      {/* Announcements Broadcast Banner (US-064) */}
+      {announcements.length > 0 && (
+        <div className="space-y-3">
+          {announcements.slice(0, 2).map((a) => (
+            <div
+              key={a.id}
+              className={`p-4 rounded-xl border flex items-start justify-between gap-4 ${
+                a.priority === "urgent"
+                  ? "bg-red-50 border-red-200 text-red-900"
+                  : a.priority === "high"
+                  ? "bg-amber-50 border-amber-200 text-amber-900"
+                  : "bg-blue-50 border-blue-200 text-blue-900"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <Megaphone className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+                  a.priority === "urgent" ? "text-red-600" : "text-blue-600"
+                }`} />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm">{a.title}</span>
+                    {a.course && (
+                      <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-white/70 border border-current">
+                        {a.course.title}
+                      </span>
+                    )}
+                    <span className="text-xs opacity-75">
+                      • {new Date(a.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-xs mt-1 opacity-90 leading-relaxed">{a.content}</p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await announcementApi.markRead(a.id);
+                    setAnnouncements((prev) => prev.filter((item) => item.id !== a.id));
+                  } catch (err) {
+                    console.error("Failed to dismiss announcement:", err);
+                  }
+                }}
+                className="text-xs font-semibold opacity-70 hover:opacity-100 flex-shrink-0 px-2 py-1 rounded hover:bg-black/5"
+              >
+                Dismiss
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

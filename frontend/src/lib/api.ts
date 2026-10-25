@@ -198,3 +198,100 @@ export const certificateApi = {
   getCertificate: (id: string) => api.get(`/certificates/${id}`),
   verifyCertificate: (number: string) => api.get(`/certificates/verify/${number}`),
 };
+
+// Grade category endpoints (US-053)
+export const gradeCategoryApi = {
+  getGradeCategories: (courseId: string) => api.get(`/courses/${courseId}/grade-categories`),
+  createGradeCategory: (courseId: string, data: { name: string; weight: number; sortOrder?: number }) =>
+    api.post(`/courses/${courseId}/grade-categories`, data),
+  updateGradeCategory: (id: string, data: { name?: string; weight?: number; sortOrder?: number }) =>
+    api.patch(`/grade-categories/${id}`, data),
+  deleteGradeCategory: (id: string) => api.delete(`/grade-categories/${id}`),
+  getOverallGrades: (courseId: string) => api.get(`/courses/${courseId}/overall-grades`),
+};
+
+// Rubric endpoints (US-054)
+export const rubricApi = {
+  getRubricByAssignment: (assignmentId: string) => api.get(`/assignments/${assignmentId}/rubric`),
+  createOrUpdateRubric: (assignmentId: string, data: Record<string, unknown>) =>
+    api.post(`/assignments/${assignmentId}/rubric`, data),
+  deleteRubric: (id: string) => api.delete(`/rubrics/${id}`),
+  submitRubricGrades: (
+    gradeId: string,
+    data: {
+      criterionGrades: Array<{
+        criterionId: string;
+        levelId?: string;
+        pointsEarned: number;
+        feedback?: string;
+      }>;
+    }
+  ) => api.post(`/grades/${gradeId}/rubric-grades`, data),
+  getRubricGrades: (gradeId: string) => api.get(`/grades/${gradeId}/rubric-grades`),
+};
+
+// Notification endpoints (US-060, US-065)
+export const notificationApi = {
+  getMyNotifications: (params?: { page?: number; limit?: number }) =>
+    api.get("/notifications/my", { params }),
+  markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.patch("/notifications/read-all"),
+  getUnreadCount: () => api.get("/notifications/unread-count"),
+};
+
+// Comment endpoints (US-062)
+export const commentApi = {
+  getLessonComments: (lessonId: string) => api.get(`/lessons/${lessonId}/comments`),
+  createComment: (lessonId: string, data: { content: string; parentId?: string }) =>
+    api.post(`/lessons/${lessonId}/comments`, data),
+  deleteComment: (id: string) => api.delete(`/comments/${id}`),
+};
+
+// Announcement endpoints (US-064)
+export const announcementApi = {
+  getMyAnnouncements: (params?: { page?: number; limit?: number }) =>
+    api.get("/announcements/my", { params }),
+  getCourseAnnouncements: (courseId: string) =>
+    api.get(`/courses/${courseId}/announcements`),
+  createCourseAnnouncement: (courseId: string, data: { title: string; content: string; priority?: string }) =>
+    api.post(`/courses/${courseId}/announcements`, data),
+  createGlobalAnnouncement: (data: { title: string; content: string; priority?: string }) =>
+    api.post("/announcements", data),
+  markRead: (id: string) => api.post(`/announcements/${id}/read`),
+  deleteAnnouncement: (id: string) => api.delete(`/announcements/${id}`),
+};
+
+// Reports and Analytics endpoints (US-081 to US-090)
+export const reportApi = {
+  getCompletionStats: (params?: { courseId?: string; startDate?: string; endDate?: string }) =>
+    api.get("/reports/completion", { params }),
+  getStudentProgress: (params?: { studentId?: string; courseId?: string }) =>
+    api.get("/reports/students", { params }),
+  getAssessmentPerformance: (courseId: string) =>
+    api.get(`/reports/assessments/${courseId}`),
+  getQuizItemAnalysis: (quizId: string) =>
+    api.get(`/reports/quizzes/${quizId}/item-analysis`),
+  getRevenueAnalytics: (params?: { startDate?: string; endDate?: string }) =>
+    api.get("/reports/revenue", { params }),
+  getExportUrl: (type: "completion" | "revenue") => `${API_BASE_URL}/reports/export/${type}`,
+};
+
+// Settings & Branding endpoints (US-091, US-093)
+export const settingApi = {
+  getPublicSettings: () => api.get("/settings/public"),
+  getAllSettings: () => api.get("/settings"),
+  updateSettings: (settings: Array<{ key: string; value: string; type?: string; group?: string; isPublic?: boolean }>) =>
+    api.put("/settings", { settings }),
+};
+
+// Audit logs endpoints (US-096)
+export const auditApi = {
+  getAuditLogs: (params?: { page?: number; limit?: number; userId?: string; action?: string; entity?: string }) =>
+    api.get("/audit-logs", { params }),
+};
+
+// Backup endpoints (US-094, US-095)
+export const backupApi = {
+  getBackupStatus: () => api.get("/backup/status"),
+  getBackupExportUrl: () => `${API_BASE_URL}/backup/export`,
+};

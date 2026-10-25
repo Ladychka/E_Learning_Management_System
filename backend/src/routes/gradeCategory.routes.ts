@@ -23,6 +23,8 @@ gradeCategoryRouter.post(
   validate(createGradeCategorySchema),
   createGradeCategory
 );
+gradeCategoryRouter.patch("/grade-categories/:id", authenticate, authorize("ADMIN", "INSTRUCTOR"), validate(updateGradeCategorySchema), updateGradeCategory);
+gradeCategoryRouter.delete("/grade-categories/:id", authenticate, authorize("ADMIN", "INSTRUCTOR"), deleteGradeCategory);
 gradeCategoryRouter.patch("/:id", authenticate, authorize("ADMIN", "INSTRUCTOR"), validate(updateGradeCategorySchema), updateGradeCategory);
 gradeCategoryRouter.delete("/:id", authenticate, authorize("ADMIN", "INSTRUCTOR"), deleteGradeCategory);
 gradeCategoryRouter.get("/courses/:courseId/overall-grades", authenticate, getOverallGrades);

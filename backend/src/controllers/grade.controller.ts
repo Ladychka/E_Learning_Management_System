@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../middleware/errorHandler";
 import { logAudit } from "../utils/audit";
-import { sendGradePublishedEmail } from "../utils/email";
+import { sendGradePublishedEmail, sendAppealResultEmail } from "../utils/email";
 
 function calculateLetterGrade(percentage: number): string {
   if (percentage >= 97) return "A+";
@@ -531,7 +531,16 @@ export const respondAppeal = async (
 
     const appeal = await prisma.gradeAppeal.findUnique({
       where: { id },
-      include: { grade: true },
+      include: {
+        grade: {
+          include: {
+            student: { select: { id: true, firstName: true, lastName: true, email: true } },
+            course: { select: { id: true, title: true } },
+            assignment: { select: { title: true } },
+            quiz: { select: { title: true } },
+          },
+        },
+      },
     });
     if (!appeal) throw new AppError("Appeal not found", 404);
 
@@ -539,6 +548,30 @@ export const respondAppeal = async (
       where: { id },
       data: { status, response: response || null },
     });
+
+    // Notify student in-app and by email (US-060)
+    const assessmentTitle = appeal.grade.assignment?.title || appeal.grade.quiz?.title || "Assessment";
+    await prisma.notification.create({
+      data: {
+        userId: appeal.studentId,
+        type: "GRADE_APPEAL_RESULT",
+        title: `Grade appeal ${status}: ${assessmentTitle}`,
+        message: `Your grade appeal for ${assessmentTitle} in ${appeal.grade.course.title} has been ${status}.${response ? ` Response: ${response}` : ""}`,
+        entityType: "Grade",
+        entityId: appeal.gradeId,
+      },
+    });
+
+    if (appeal.grade.student.email) {
+      await sendAppealResultEmail({
+        email: appeal.grade.student.email,
+        studentName: `${appeal.grade.student.firstName} ${appeal.grade.student.lastName}`,
+        courseTitle: appeal.grade.course.title,
+        assessmentTitle,
+        status,
+        response: response || undefined,
+      });
+    }
 
     await logAudit({
       userId: req.user?.id,

@@ -15,14 +15,18 @@ import {
   Award,
   Receipt,
   FileCheck,
+  BarChart3,
+  Shield,
+  Sliders,
 } from "lucide-react";
 import { useState } from "react";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 export const Layout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(true);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -36,10 +40,13 @@ export const Layout = () => {
   ];
 
   const adminItems = [
-    { path: "/admin/users", label: "Users", icon: Users },
     { path: "/admin/courses", label: "Courses", icon: GraduationCap },
-    { path: "/admin/categories", label: "Topics", icon: FolderTree },
     { path: "/admin/gradebook", label: "Gradebook", icon: Award },
+    { path: "/admin/reports", label: "Analytics", icon: BarChart3 },
+    { path: "/admin/users", label: "Users", icon: Users },
+    { path: "/admin/categories", label: "Topics", icon: FolderTree },
+    { path: "/admin/audit-logs", label: "Audit Logs", icon: Shield },
+    { path: "/admin/settings", label: "Settings", icon: Sliders },
   ];
 
   return (
@@ -108,7 +115,7 @@ export const Layout = () => {
                     .filter((item) =>
                       user?.role === "ADMIN"
                         ? true
-                        : !["/admin/users", "/admin/categories"].includes(item.path)
+                        : !["/admin/users", "/admin/categories", "/admin/audit-logs", "/admin/settings"].includes(item.path)
                     )
                     .map((item) => (
                       <Link
@@ -165,10 +172,11 @@ export const Layout = () => {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <NotificationDropdown />
             <Link
               to="/profile"
-              className="text-sm font-medium text-gray-700 hover:text-primary-600"
+              className="text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400"
             >
               My Profile
             </Link>

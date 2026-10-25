@@ -20,26 +20,26 @@
 ## Phase Breakdown
 
 ### Phase A: Core Plan Gap Closure (Sprints 4, 5, 6 Essentials)
-- [ ] **A1. US-053 Grade Weighting Integration**:
+- [x] **A1. US-053 Grade Weighting Integration**:
   - Connect existing `gradeCategory.controller.ts` with a dedicated Grade Weighting section in `frontend/src/pages/CourseSettings.tsx`.
   - Validate that categories (e.g., Assignments 40%, Quizzes 30%, Final 30%) sum to 100%.
   - Display weighted course GPA in Gradebook and student MyGrades.
-- [ ] **A2. US-054 Rubrics Integration**:
+- [x] **A2. US-054 Rubrics Integration**:
   - Add Rubric Builder modal to `frontend/src/pages/AssignmentDetail.tsx` and `CourseBuilder.tsx`.
   - Add Rubric Grading interface for instructors when grading submissions.
   - Display interactive rubric breakdown to students upon viewing their grade.
-- [ ] **A3. US-060 Grade & Appeal Notifications**:
+- [x] **A3. US-060 Grade & Appeal Notifications**:
   - Enhance `respondAppeal` in `grade.controller.ts` to issue in-app `Notification` and trigger email to student.
   - Wire notifications dropdown into Web navigation bar with live unread badge.
-- [ ] **A4. Assessment UI Perfection**:
+- [x] **A4. Assessment UI Perfection**:
   - Verify and polish `QuizTaking.tsx`: timer autosave to localStorage, resume on page refresh, confirmation modal before submit, clear breakdown with explanations.
   - Verify and polish `AssignmentDetail.tsx`: drag-and-drop file upload, upload progress indicator, mime-type/size validation, deadline countdown, late-submission tag.
-- [ ] **A5. Sprint 5 Communication & Analytics APIs**:
+- [x] **A5. Sprint 5 Communication & Analytics APIs**:
   - Lesson Comments API (`/api/v1/lessons/:id/comments`) & LessonPlayer comment thread UI.
   - Course Announcements API (`/api/v1/courses/:id/announcements`) with broadcast to enrolled students.
   - Course Q&A / Discussion Forum API (`/api/v1/courses/:id/qa`).
   - Reporting APIs: Student Progress, Course Completion, Revenue analytics.
-- [ ] **A6. Sprint 6 Admin & Settings APIs**:
+- [x] **A6. Sprint 6 Admin & Settings APIs**:
   - System Settings API (`/api/v1/admin/settings`).
   - Audit Log viewer API (`/api/v1/admin/audit-logs`) and Web UI table with filters.
   - Database Backup/Restore endpoints (admin-guarded).

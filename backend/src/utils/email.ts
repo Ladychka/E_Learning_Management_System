@@ -106,3 +106,34 @@ export const sendGradePublishedEmail = async ({
     `,
   });
 };
+
+export const sendAppealResultEmail = async ({
+  email,
+  studentName,
+  courseTitle,
+  assessmentTitle,
+  status,
+  response,
+}: {
+  email: string;
+  studentName: string;
+  courseTitle: string;
+  assessmentTitle: string;
+  status: string;
+  response?: string;
+}) => {
+  const gradeUrl = `${config.frontendUrl}/my-grades`;
+  const isApproved = status.toLowerCase() === "approved";
+  await sendEmail({
+    to: email,
+    subject: `Grade Appeal Result: ${assessmentTitle} - ${status.toUpperCase()}`,
+    html: `
+      <h1>Grade Appeal Update</h1>
+      <p>Hi ${studentName},</p>
+      <p>Your grade appeal for <strong>${assessmentTitle}</strong> in <strong>${courseTitle}</strong> has been <strong>${status.toUpperCase()}</strong>.</p>
+      ${response ? `<div style="background:#f8f9fa;padding:16px;border-left:4px solid ${isApproved ? '#28a745' : '#dc3545'};margin:16px 0;"><p style="margin:0;"><strong>Instructor Response:</strong></p><p style="margin:8px 0 0 0;">${response}</p></div>` : ""}
+      <a href="${gradeUrl}" style="padding:10px 20px;background:#007bff;color:white;text-decoration:none;border-radius:4px;">View My Grades</a>
+      <p style="color:#6c757d;font-size:12px;">This is an automated notification from ELMS.</p>
+    `,
+  });
+};

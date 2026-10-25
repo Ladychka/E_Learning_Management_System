@@ -201,5 +201,26 @@ All notable changes and progress to the ELMS project are documented in this file
 
 ---
 
-*Document Version: 1.3*  
-*Last Updated: 2026-07-28*
+## Phase A: Core Plan Gap Closure — 2026-10-25
+
+### Added & Completed
+- **US-053 Grade Weighting**: Integrated `gradeCategory.controller.ts` with dedicated Grade Weighting section in `CourseSettings.tsx`. Enforced 100% total weight validation, visual progress bar, category breakdown, and weighted course GPA.
+- **US-054 Rubrics**: Interactive Rubric Builder & grading in `AssignmentDetail.tsx`. Multi-criteria x multi-level configuration with point weights and student criteria scoring view.
+- **US-060 Grade & Appeal Notifications**: Enhanced `respondAppeal` in `grade.controller.ts` with in-app `Notification` creation and `sendAppealResultEmail` dispatch. Added `NotificationDropdown.tsx` to the navigation bar with 30s live unread badge polling.
+- **Assessment UI Perfection**:
+  - `QuizTaking.tsx`: Added question navigation, timer countdown, auto-save to localStorage, resume on page refresh, confirmation submit modal, instant auto-grading for MCQ/TrueFalse, and detailed question breakdown with explanations.
+  - `AssignmentDetail.tsx`: Multi-file drag-and-drop file upload, upload progress indicator, mime-type/size validation, deadline countdown timer, late-submission status, and submission history.
+- **Sprint 5 Communication & Analytics APIs**:
+  - Lesson Comments API (`comment.controller.ts` & `comment.routes.ts`) and `LessonDiscussion.tsx` with nested reply threads, user avatars, and delete controls.
+  - Course Announcements API (`announcement.controller.ts` & `announcement.routes.ts`) with high-priority banners in `Dashboard.tsx` and read receipts.
+  - Reporting & Analytics APIs (`report.controller.ts` & `report.routes.ts`) and `Admin/Reports.tsx` with completion rates, student progress, revenue analytics, and CSV exports.
+- **Sprint 6 Admin & Quality APIs**:
+  - System Settings API (`setting.controller.ts` & `setting.routes.ts`) and `Admin/Settings.tsx` with site branding, platform configurations, and maintenance mode.
+  - Audit Log viewer API (`audit.controller.ts` & `audit.routes.ts`) and `Admin/AuditLogs.tsx` with filtering, pagination, and JSON delta viewer.
+  - Database Backup status and snapshot download (`backup.controller.ts` & `backup.routes.ts`).
+- **Test Suite**: Added Vitest test suite (`backend/src/__tests__`) covering Grade Weighting, Rubrics & Grading, and Payments & Coupons with 100% passing tests.
+
+---
+
+*Document Version: 1.4*  
+*Last Updated: 2026-10-25*

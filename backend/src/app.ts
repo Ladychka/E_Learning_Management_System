@@ -25,6 +25,12 @@ import { paymentRouter } from "./routes/payment.routes";
 import { gradeCategoryRouter } from "./routes/gradeCategory.routes";
 import { rubricRouter } from "./routes/rubric.routes";
 import { notificationRouter } from "./routes/notification.routes";
+import { commentRouter } from "./routes/comment.routes";
+import { announcementRouter } from "./routes/announcement.routes";
+import { reportRouter } from "./routes/report.routes";
+import { settingRouter } from "./routes/setting.routes";
+import { auditRouter } from "./routes/audit.routes";
+import { backupRouter } from "./routes/backup.routes";
 
 export const app = express();
 
@@ -125,6 +131,12 @@ app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1", gradeCategoryRouter);
 app.use("/api/v1", rubricRouter);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1", commentRouter);
+app.use("/api/v1", announcementRouter);
+app.use("/api/v1", reportRouter);
+app.use("/api/v1", settingRouter);
+app.use("/api/v1", auditRouter);
+app.use("/api/v1", backupRouter);
 
 // 404 handler
 app.use((_req, res) => {

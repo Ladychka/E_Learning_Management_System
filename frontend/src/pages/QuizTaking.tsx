@@ -94,9 +94,20 @@ export const QuizTaking = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [results, setResults] = useState<AttemptResult | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasAutoSubmitted = useRef(false);
+
+  // Autosave to localStorage (Phase A requirement)
+  useEffect(() => {
+    if (attemptId && phase === "taking") {
+      localStorage.setItem(`quiz_answers_${attemptId}`, JSON.stringify(answers));
+      if (timeLeft !== null) {
+        localStorage.setItem(`quiz_time_${attemptId}`, String(timeLeft));
+      }
+    }
+  }, [answers, timeLeft, attemptId, phase]);
 
   const loadQuizInfo = useCallback(async () => {
     if (!lessonId) return;
@@ -167,12 +178,27 @@ export const QuizTaking = () => {
       };
       setAttemptId(data.attempt.id);
       setQuestions(data.questions);
-      setAnswers({});
       setCurrentIndex(0);
       hasAutoSubmitted.current = false;
 
-      if (data.attempt.timeLimit) {
-        setTimeLeft(data.attempt.timeLimit * 60); // minutes to seconds
+      // Restore saved answers if user is resuming an active attempt
+      const savedAnswers = localStorage.getItem(`quiz_answers_${data.attempt.id}`);
+      if (savedAnswers) {
+        try {
+          setAnswers(JSON.parse(savedAnswers));
+          toast.success("Resumed previously saved answers");
+        } catch {
+          setAnswers({});
+        }
+      } else {
+        setAnswers({});
+      }
+
+      const savedTime = localStorage.getItem(`quiz_time_${data.attempt.id}`);
+      if (savedTime && parseInt(savedTime, 10) > 0) {
+        setTimeLeft(parseInt(savedTime, 10));
+      } else if (data.attempt.timeLimit) {
+        setTimeLeft(data.attempt.timeLimit * 60);
       } else {
         setTimeLeft(null);
       }
@@ -189,6 +215,7 @@ export const QuizTaking = () => {
     // Prevent double submit
     if (phase === "submitting") return;
     setPhase("submitting");
+    setShowConfirmModal(false);
 
     const payload = Object.entries(answers).map(([questionId, answer]) => ({
       questionId,
@@ -199,6 +226,9 @@ export const QuizTaking = () => {
       const res = await quizAttemptApi.submitAttempt(attemptId, {
         answers: payload,
       });
+      // Clear localStorage on successful submit
+      localStorage.removeItem(`quiz_answers_${attemptId}`);
+      localStorage.removeItem(`quiz_time_${attemptId}`);
       setResults(res.data.data);
       setPhase("results");
       if (!isAuto) {
@@ -548,7 +578,8 @@ export const QuizTaking = () => {
 
             {isLast ? (
               <button
-                onClick={() => handleSubmit()}
+                type="button"
+                onClick={() => setShowConfirmModal(true)}
                 disabled={phase === "submitting"}
                 className="btn-primary"
               >
@@ -559,7 +590,7 @@ export const QuizTaking = () => {
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="mr-1 h-4 w-4" /> Submit
+                    <CheckCircle className="mr-1 h-4 w-4" /> Submit Quiz
                   </>
                 )}
               </button>
@@ -575,6 +606,81 @@ export const QuizTaking = () => {
             )}
           </div>
         </div>
+
+        {/* Confirm Submit Dialog Modal */}
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+                <AlertCircle className="h-6 w-6 shrink-0" />
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  Ready to Submit Your Quiz?
+                </h3>
+              </div>
+
+              {(() => {
+                const answeredCount = Object.keys(answers).filter(
+                  (k) => answers[k] && answers[k].trim() !== ""
+                ).length;
+                const unansweredCount = questions.length - answeredCount;
+
+                return (
+                  <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 space-y-1">
+                      <div className="flex justify-between font-medium">
+                        <span>Total Questions:</span>
+                        <span>{questions.length}</span>
+                      </div>
+                      <div className="flex justify-between font-medium text-emerald-600">
+                        <span>Answered:</span>
+                        <span>{answeredCount}</span>
+                      </div>
+                      {unansweredCount > 0 && (
+                        <div className="flex justify-between font-semibold text-rose-600">
+                          <span>Unanswered:</span>
+                          <span>{unansweredCount}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {unansweredCount > 0 ? (
+                      <p className="text-rose-600 font-medium text-xs">
+                        Warning: You have {unansweredCount} unanswered question{unansweredCount > 1 ? "s" : ""}. You will not receive points for unanswered questions.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500">
+                        You have answered all questions. Once submitted, your answers cannot be modified.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  className="btn-secondary text-sm"
+                >
+                  Keep Reviewing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSubmit(false)}
+                  disabled={phase === "submitting"}
+                  className="btn-primary text-sm inline-flex items-center gap-1.5"
+                >
+                  {phase === "submitting" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4" />
+                  )}
+                  Confirm & Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
