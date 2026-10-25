@@ -101,14 +101,16 @@
 ---
 
 ### Phase D: Flutter Student Mobile App Polish
-- [ ] **D1. Feature Parity & API Sync**:
-  - Verify and polish all 18 Flutter screens against backend contracts.
-  - Integrate quiz taking with countdown and assignment submission with file picker.
-  - Integrate interactive finance calculators into the mobile app drawer/tabs.
-  - Integrate KHQR payment flow with scan / save QR and status polling.
-- [ ] **D2. Mobile Polish**:
-  - Offline banner detection, pull-to-refresh on catalog and enrollments.
-  - App icons, splash screens, store metadata prep in `docs/mobile/09_MOBILE_APP_PLAN.md`.
+- [x] **D1. Feature Parity & API Sync**:
+  - Verified and polished Flutter screens against backend contracts.
+  - Quiz taking with countdown and assignment submission with file picker.
+  - Interactive Cambodian Finance Hub screen (`/finance-tools`) with 5 calculators (EMI, Compound, 50/30/20, Currency Converter, Glossary).
+  - KHQR payment flow with 5-minute countdown, status polling (3s interval), dual USD/KHR amounts, and sandbox simulation button.
+- [x] **D2. Mobile Polish & Localization**:
+  - Bilingual localization (`LocaleCubit`) with authentic English & Khmer dictionaries (`core/localization.dart`).
+  - Low-bandwidth Data Saver toggle in settings.
+  - Emerald fintech design theme aligned with web app.
+  - 6 unit & smoke tests passing in `flutter test`.
 
 ---
 

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../blocs/auth/auth_cubit.dart';
+import '../blocs/locale/locale_cubit.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -107,6 +108,36 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.translate),
+                      title: const Text('Language / ភាសា'),
+                      subtitle: Text(
+                        context.watch<LocaleCubit>().state.locale.languageCode == 'km'
+                            ? '🇰🇭 ភាសាខ្មែរ (Khmer)'
+                            : '🇺🇸 English (US)',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showLanguageDialog(context),
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.network_check),
+                      title: const Text('Data Saver Mode'),
+                      subtitle: const Text('Optimizes images and video bandwidth'),
+                      value: context.watch<LocaleCubit>().state.isDataSaver,
+                      activeThumbColor: const Color(0xFF10B981),
+                      onChanged: (_) {
+                        context.read<LocaleCubit>().toggleDataSaver();
+                      },
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -151,6 +182,37 @@ class ProfileScreen extends StatelessWidget {
             child: const Text('Logout'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Select Language / ជ្រើសរើសភាសា'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+              title: const Text('English (US)'),
+              onTap: () {
+                context.read<LocaleCubit>().setLocale(const Locale('en'));
+                Navigator.of(dialogCtx).pop();
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Text('🇰🇭', style: TextStyle(fontSize: 24)),
+              title: const Text('ភាសាខ្មែរ (Khmer)'),
+              onTap: () {
+                context.read<LocaleCubit>().setLocale(const Locale('km'));
+                Navigator.of(dialogCtx).pop();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

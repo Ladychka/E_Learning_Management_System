@@ -4,6 +4,30 @@ All notable changes and progress to the ELMS project are documented in this file
 
 ---
 
+## Phase D Polish — 2026-10-25
+
+### Added
+- **Interactive Cambodian Finance Hub on Flutter Mobile (`/finance-tools`)**:
+  - Loan / EMI Amortization calculator with month-by-month principal vs interest breakdown.
+  - Compound Growth & Savings projection calculator.
+  - 50/30/20 Monthly Budgeting breakdown in both USD and KHR.
+  - Live USD ↔ KHR currency converter with National Bank of Cambodia (NBC) reference rate (4,100 KHR).
+  - Searchable Cambodian Fintech Glossary (KHQR, Bakong, NBC, CBC, EMI, AML/CFT) with bilingual terms.
+- **Bilingual Localization & Context in Flutter (`LocaleCubit`)**:
+  - Integrated `flutter_localizations` with English and authentic Khmer string dictionaries in `core/localization.dart`.
+  - Persistent language toggle (English 🇺🇸 / ភាសាខ្មែរ 🇰🇭) and low-bandwidth Data Saver toggle in `ProfileScreen`.
+  - ShellScaffold bottom navigation bar dynamically reflects authentic Khmer navigation titles.
+- **KHQR Mobile Payment Experience**:
+  - Added active 5-minute countdown session timer for KHQR payment view.
+  - Automatic status polling (every 3 seconds) against `GET /api/v1/payments/:id`.
+  - Dual currency price display: `$25.00 (≈ 102,500 ៛)`.
+  - Added sandbox simulation button (`POST /api/v1/payments/:id/confirm`) for immediate testing and evaluation.
+- **Theme & Unit Test Automation**:
+  - Aligned Flutter Material 3 theme to Emerald-500 primary (`#10B981`) and Navy-900 slate neutral tokens.
+  - Added 6 automated tests in `test/widget_test.dart` and `test/finance_hub_test.dart` covering EMI calculations, budget allocations, NBC currency rate, and localization state.
+
+---
+
 ## Phase C Polish — 2026-10-25
 
 ### Added

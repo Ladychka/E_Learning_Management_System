@@ -19,6 +19,7 @@ import '../screens/quiz_results_screen.dart';
 import '../screens/assignment_detail_screen.dart';
 import '../screens/grades_screen.dart';
 import '../screens/checkout_screen.dart';
+import '../screens/finance_hub_screen.dart';
 import '../screens/shell_scaffold.dart';
 
 class AppRouter {
@@ -74,6 +75,10 @@ class AppRouter {
               builder: (_, state) => LessonPlayerScreen(
                 lessonId: state.pathParameters['id']!,
               ),
+            ),
+            GoRoute(
+              path: '/finance-tools',
+              builder: (_, __) => const FinanceHubScreen(),
             ),
             GoRoute(
               path: '/enrollments',

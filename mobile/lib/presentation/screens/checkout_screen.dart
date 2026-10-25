@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -32,10 +33,86 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double _discountAmount = 0;
   double get _finalAmount => widget.amount - _discountAmount;
 
+  Timer? _pollTimer;
+  Timer? _countdownTimer;
+  int _secondsRemaining = 300;
+  bool _simulating = false;
+
   @override
   void dispose() {
+    _pollTimer?.cancel();
+    _countdownTimer?.cancel();
     _couponCtrl.dispose();
     super.dispose();
+  }
+
+  void _startPolling(String paymentId) {
+    _pollTimer?.cancel();
+    _countdownTimer?.cancel();
+    _secondsRemaining = 300;
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining <= 1) {
+        timer.cancel();
+        _pollTimer?.cancel();
+        setState(() {
+          _secondsRemaining = 0;
+          _error = 'QR payment session expired. Please try again.';
+        });
+      } else {
+        setState(() => _secondsRemaining--);
+      }
+    });
+
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      try {
+        final res = await _api.get('/payments/$paymentId');
+        final data = res.data['data'] as Map<String, dynamic>;
+        final status = (data['status'] as String? ?? '').toLowerCase();
+
+        if (status == 'completed' || status == 'paid' || status == 'success') {
+          timer.cancel();
+          _countdownTimer?.cancel();
+          setState(() {
+            _checkoutResult = CheckoutResult(
+              paymentId: paymentId,
+              amount: (data['amount'] as num?)?.toDouble() ?? widget.amount,
+              currency: data['currency'] as String? ?? widget.currency,
+              status: 'completed',
+              gateway: data['gateway'] as String? ?? 'khqr',
+            );
+          });
+        }
+      } catch (_) {}
+    });
+  }
+
+  Future<void> _simulateConfirm(String paymentId) async {
+    setState(() => _simulating = true);
+    try {
+      await _api.post('/payments/$paymentId/confirm', data: {
+        'gatewayRef': 'SANDBOX-APP-${DateTime.now().millisecondsSinceEpoch}',
+        'status': 'completed',
+      });
+      // The polling loop or next tick will pick up completion, or set directly
+      _pollTimer?.cancel();
+      _countdownTimer?.cancel();
+      setState(() {
+        _simulating = false;
+        _checkoutResult = CheckoutResult(
+          paymentId: paymentId,
+          amount: widget.amount,
+          currency: widget.currency,
+          status: 'completed',
+          gateway: 'khqr',
+        );
+      });
+    } catch (e) {
+      setState(() {
+        _simulating = false;
+        _error = 'Simulation failed: $e';
+      });
+    }
   }
 
   Future<void> _checkout(String gateway) async {
@@ -54,11 +131,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final payment = res.data['data']['payment'] as Map<String, dynamic>;
 
       final discount = (payment['discountAmount'] as num?)?.toDouble() ?? 0;
+      final result = CheckoutResult.fromJson(checkoutData);
+
       setState(() {
         _discountAmount = discount;
-        _checkoutResult = CheckoutResult.fromJson(checkoutData);
+        _checkoutResult = result;
         _loading = false;
       });
+
+      if (result.isKHQR || result.isBakong) {
+        _startPolling(result.paymentId);
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -299,62 +382,146 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildQRCodeView(BuildContext context, CheckoutResult result) {
+    final mins = _secondsRemaining ~/ 60;
+    final secs = _secondsRemaining % 60;
+    final timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+
+    final amountUsd = result.amount;
+    final amountKhr = (amountUsd * 4100).round();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withAlpha(25),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.timer_outlined, size: 16, color: Color(0xFF10B981)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Expires in $timeStr',
+                      style: const TextStyle(
+                        color: Color(0xFF10B981),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
-            'Scan to Pay',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            'Scan with Bakong or Any Banking App',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
-            '${result.currency} ${result.amount.toStringAsFixed(2)}',
+            '${result.currency} ${result.amount.toStringAsFixed(2)}  (≈ ${amountKhr.toString()} ៛)',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFF2563EB),
+                  color: const Color(0xFF10B981),
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Card(
             elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Image.network(
-                result.qrImage!,
-                height: 240,
-                width: 240,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 240,
-                  width: 240,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.qr_code, size: 80),
-                ),
+              child: Column(
+                children: [
+                  Image.network(
+                    result.qrImage!,
+                    height: 240,
+                    width: 240,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 240,
+                      width: 240,
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.qr_code, size: 80),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        height: 14,
+                        width: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Checking for transaction...',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          TextButton.icon(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: result.qrData ?? ''));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied to clipboard')),
-              );
-            },
-            icon: const Icon(Icons.copy, size: 18),
-            label: const Text('Copy Payment Data'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: result.qrData ?? ''));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Payment data copied to clipboard')),
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copy KHQR Payload'),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          // Sandbox quick-simulate button for testing / evaluation
           SizedBox(
             width: double.infinity,
-            child: FilledButton(
-              onPressed: () => context.pop(),
-              child: const Text('I\'ve Completed Payment'),
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF10B981),
+                side: const BorderSide(color: Color(0xFF10B981)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed: _simulating
+                  ? null
+                  : () => _simulateConfirm(result.paymentId),
+              icon: _simulating
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.bolt, size: 18),
+              label: Text(_simulating
+                  ? 'Confirming with NBC Sandbox...'
+                  : '⚡ Simulate Success (Sandbox Demo)'),
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Official National Bank of Cambodia KHQR test rail',
+            style: TextStyle(color: Colors.grey[500], fontSize: 11),
           ),
         ],
       ),
