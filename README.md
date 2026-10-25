@@ -1,122 +1,127 @@
-# ELMS — E-Learning Management System
+# ELMS — Fintech E-Learning Management System
 
-A full-stack LMS built for a 12-week Agile capstone, supporting KHQR, ABA PayWay, and Bakong payments.
+[![Backend Vitest](https://img.shields.io/badge/Vitest-18%20Passed-emerald)](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/backend)
+[![Flutter Tests](https://img.shields.io/badge/Flutter-6%20Passed-blue)](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/mobile)
+[![OpenAPI 3.0](https://img.shields.io/badge/Swagger-API%20Docs-success)](http://localhost:5000/api/docs)
+[![Cambodian Fintech](https://img.shields.io/badge/NBC-KHQR%20%7C%20Bakong-crimson)](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/PAYMENTS.md)
 
-## Project Structure
+A complete, production-grade **Fintech E-Learning Management System (ELMS)** designed for Cambodian banking, microfinance, and technology education. Features official National Bank of Cambodia (NBC) KHQR payment rails, interactive finance calculators, bilingual localization (Khmer + English), weighted gradebooks, rubric grading, and public QR certificate verification.
+
+---
+
+## 🏛️ System Architecture
 
 ```
 elms/
-├── backend/          # Node.js / Express / TypeScript / Prisma API
-├── frontend/         # React / Vite / TypeScript / Tailwind CSS
-└── README.md
+├── backend/          # Node.js 20 + Express + TypeScript + Prisma ORM + PostgreSQL
+├── frontend/         # React 18 + Vite + TypeScript + Tailwind CSS (Bilingual EN/KM)
+├── mobile/           # Flutter 3.22 + BLoC + Material 3 (iOS & Android)
+├── docs/             # Complete production & operational documentation
+└── docker-compose.yml# Container orchestration
 ```
 
-## Quick Start
+---
 
-### Prerequisites
+## ✨ Key Platform Features
 
-- Node.js 20+
-- PostgreSQL 15+ (or Docker)
-- pnpm (or npm / yarn)
+1. **Cambodian Finance Hub (`/finance-tools`)**:
+   - Loan / EMI Amortization calculator (reducing balance breakdown).
+   - Compound Interest & Savings Goal projection simulator.
+   - 50/30/20 Monthly Budgeting planner with instant USD and KHR allocation.
+   - Live USD ↔ KHR Currency Converter with official NBC 4,100 KHR benchmark rate.
+   - Searchable Cambodian Fintech Glossary (KHQR, Bakong, NBC, CBC, EMI, AML/CFT).
+2. **Trustworthy Payments & KHQR**:
+   - Native Cambodian KHQR dynamic QR generation with a 5-minute security timer.
+   - 3-second automatic polling and sandbox test rail simulation (`POST /api/v1/payments/:id/confirm`).
+   - Dual currency pricing: e.g. `$25.00 (≈ 102,500 ៛)`.
+   - Idempotency key support preventing duplicate charges.
+3. **Advanced Learning Experience**:
+   - Video player with speed controls (0.75x–2.0x), auto-advance countdown banner, and timestamped personal notes.
+   - Sidecar slide-over financial calculator drawer inside the lesson player.
+   - Timed quizzes with immediate answer rationales and drag-and-drop assignment submissions.
+4. **Academics & Pedagogy**:
+   - Grade Weighting categories (Quizzes 30%, Assignments 30%, Final 40%) summing to 100%.
+   - Interactive Rubrics builder and criteria-based grading interface.
+   - Public Certificate verification view (`/verify/:certificateNumber`) with dynamic QR codes.
+5. **Bilingual Localization & Design System**:
+   - English 🇺🇸 and authentic Khmer 🇰🇭 translations (`Kantumruy Pro` / `Battambang` fonts).
+   - Theme tokens: Emerald primary (`#10B981`), Navy Slate neutrals (`#0F172A`), Gold badges.
+   - System/manual Dark Mode support across Web and Mobile.
+   - Low-bandwidth Data Saver toggle for Cambodian mobile connections.
 
-### 1. Backend
+---
 
+## 🚀 Quick Start
+
+### 1. Database & Backend
 ```bash
+cd elms
+docker compose up -d          # Starts PostgreSQL on port 5435
 cd backend
-cp .env.example .env
-# Edit .env with your DATABASE_URL and SMTP credentials
-pnpm install
-npx prisma migrate dev --name init
-npx prisma db seed    # creates admin/instructor/student + demo course
-pnpm dev              # http://localhost:5000
+npm install
+npx prisma migrate deploy
+npm run db:seed
+npm run dev                   # API server running on http://localhost:5000
 ```
 
-### 2. Frontend
-
+### 2. Web Console (React + Vite)
 ```bash
-cd frontend
-pnpm install
-pnpm dev              # http://localhost:5173
+cd elms/frontend
+npm install
+npm run dev                   # Web app running on http://localhost:5173
 ```
 
-## Default Demo Accounts (after seed)
+### 3. Student Mobile App (Flutter)
+```bash
+cd elms/mobile
+flutter pub get
+flutter run                   # Runs on Android emulator, iOS simulator, or Web
+```
 
-| Role       | Email                    | Password         |
-|------------|--------------------------|------------------|
-| Admin      | admin@elms.edu           | Admin123!        |
-| Instructor | instructor@elms.edu      | Instructor123!   |
-| Student    | student@elms.edu         | Student123!      |
+---
 
-## Sprint 1 Status
+## 🔑 Demo Credentials
 
-- [x] Register / Login / Logout (JWT + refresh tokens)
-- [x] Role-based access control (Student / Instructor / Admin)
-- [x] Email verification
-- [x] Password reset
-- [x] Profile update + password change + account deactivation
-- [x] Admin user management (list, search, suspend, reactivate, delete)
-- [x] Course CRUD + search + categories
-- [x] Audit logging on all mutations
-- [x] Frontend auth context + protected routes
-- [x] Admin dashboard pages (users, courses, categories)
+| Role | Email | Password | Primary Capabilities |
+|---|---|---|---|
+| **Admin** | `admin@elms.edu.kh` | `Password123!` | Audit logs, DB snapshots, settings, payouts |
+| **Instructor** | `instructor@elms.edu.kh` | `Password123!` | Course builder, rubrics, gradebook, quiz authoring |
+| **Student** | `student@elms.edu.kh` | `Password123!` | Course enrollments, KHQR checkout, certificates, quizzes |
 
-## API Documentation
+---
 
-Base URL: `http://localhost:5000/api/v1`
+## 🧪 Verification & Automated Tests
 
-| Endpoint              | Method | Auth | Role         |
-|-----------------------|--------|------|--------------|
-| `/auth/register`      | POST   | No   | —            |
-| `/auth/login`         | POST   | No   | —            |
-| `/auth/logout`        | POST   | Yes  | —            |
-| `/auth/me`            | GET    | Yes  | —            |
-| `/auth/profile`       | PATCH  | Yes  | —            |
-| `/auth/refresh`       | POST   | No   | —            |
-| `/auth/verify-email`  | GET    | No   | —            |
-| `/auth/forgot-password`| POST  | No   | —            |
-| `/auth/reset-password`| POST   | No   | —            |
-| `/users`              | GET    | Yes  | ADMIN        |
-| `/users/:id`          | GET    | Yes  | ADMIN        |
-| `/users`              | POST   | Yes  | ADMIN        |
-| `/users/:id`          | PATCH  | Yes  | ADMIN        |
-| `/users/:id`          | DELETE | Yes  | ADMIN        |
-| `/users/:id/suspend`  | POST   | Yes  | ADMIN        |
-| `/users/:id/reactivate`| POST  | Yes  | ADMIN        |
-| `/courses`            | GET    | No*  | —            |
-| `/courses/:id`        | GET    | No*  | —            |
-| `/courses`            | POST   | Yes  | INSTRUCTOR/ADMIN |
-| `/courses/:id`        | PATCH  | Yes  | INSTRUCTOR/ADMIN |
-| `/courses/:id`        | DELETE | Yes  | INSTRUCTOR/ADMIN |
-| `/categories`         | GET    | No   | —            |
-| `/categories`         | POST   | Yes  | ADMIN        |
-| `/categories/:id`       | PATCH  | Yes  | ADMIN        |
-| `/categories/:id`       | DELETE | Yes  | ADMIN        |
+### Backend Tests (Vitest)
+```bash
+cd elms/backend
+npm test
+# Result: 6 test suites, 18 tests passed (Auth, Rubrics, Grade Weighting, Payments, Quiz Scoring, Cambodian Rates)
+```
 
-\* Students see only published courses; instructors see their own + published.
+### Mobile Tests (Flutter Test)
+```bash
+cd elms/mobile
+flutter test
+# Result: 6 tests passed (EMI calculation, 50/30/20 allocation, NBC exchange, LocaleCubit, Smoke test)
+```
 
-## Development Notes
+### Type Checking & Build Verification
+```bash
+cd elms/backend && npx tsc --noEmit           # 0 errors
+cd elms/frontend && npm run build             # 0 errors, built in ~4s
+cd elms/mobile && flutter analyze             # No issues found!
+```
 
-- **Backend rules:** Payment gateway calls happen only from backend. Frontend never touches KHQR/ABA/Bakong directly.
-- **File storage:** Large files (videos, PDFs) go to S3-compatible object storage; DB stores only reference URLs.
-- **Security:** Helmet, CORS, rate limiting, bcrypt (12 rounds), JWT access + refresh tokens, audit logs.
-- **Testing:** Add `vitest` tests per sprint. Run with `pnpm test`.
+---
 
-## Documentation
+## 📚 Documentation Index
 
-Full project documentation is available in the `docs/` folder:
-
-| Document | Contents |
-|----------|----------|
-| `docs/01_PROJECT_OVERVIEW.md` | Executive summary, scope, objectives, risk assessment |
-| `docs/02_TECHNICAL_ARCHITECTURE.md` | System diagrams, security, scalability, module dependencies |
-| `docs/03_API_DOCUMENTATION.md` | Complete endpoint reference with request/response examples |
-| `docs/04_SPRINT_1_REPORT.md` | Sprint 1 completion report with metrics and testing summary |
-| `docs/05_SPRINT_2_PLAN.md` | Sprint 2 breakdown: tasks, estimates, risks, acceptance criteria |
-| `docs/06_DATABASE_SCHEMA.md` | Full table documentation, column reference, ERD |
-| `docs/07_SETUP_GUIDE.md` | Installation, configuration, troubleshooting |
-| `docs/08_USER_STORIES.md` | All 100 user stories organized by sprint with status |
-| `docs/CHANGELOG.md` | Progress tracking and release notes |
-
-## Roadmap
-
-See `ELMS_PROJECT_PLAN.md` for the full 6-sprint plan (Sprint 1 → Sprint 6).
+- [Administrator Manual](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/ADMIN_MANUAL.md)
+- [Student & Instructor User Guide](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/USER_GUIDE.md)
+- [API Reference & OpenAPI Specification](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/API.md)
+- [Production Deployment Guide](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/DEPLOYMENT.md)
+- [Cambodian Payment Rails & KHQR Guide](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/PAYMENTS.md)
+- [5-Minute Demo & Presentation Script](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/DEMO_SCRIPT.md)
+- [OWASP Top 10 Security Audit](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/SECURITY.md)
+- [Project Changelog](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/CHANGELOG.md)

@@ -31,8 +31,26 @@ import { reportRouter } from "./routes/report.routes";
 import { settingRouter } from "./routes/setting.routes";
 import { auditRouter } from "./routes/audit.routes";
 import { backupRouter } from "./routes/backup.routes";
+import { openApiSpec, renderSwaggerHtml } from "./docs/openapi";
 
 export const app = express();
+
+// Specialized Rate limiters for security
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many authentication attempts, please try again later." },
+});
+
+const checkoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many checkout requests, please try again later." },
+});
 
 // Security middleware
 app.use(
@@ -111,8 +129,18 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// API routes
-app.use("/api/v1/auth", authRouter);
+// Interactive OpenAPI Documentation (Swagger UI)
+app.get("/api/docs/swagger.json", (_req, res) => {
+  res.json(openApiSpec);
+});
+app.get("/api/docs", (_req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(renderSwaggerHtml("/api/docs/swagger.json"));
+});
+
+// API routes with dedicated rate limiting for sensitive endpoints
+app.use("/api/v1/auth", authLimiter, authRouter);
+app.use("/api/v1/payments/checkout", checkoutLimiter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/courses", courseRouter);
 app.use("/api/v1/categories", categoryRouter);

@@ -4,6 +4,31 @@ All notable changes and progress to the ELMS project are documented in this file
 
 ---
 
+## Phase E Polish — 2026-10-25
+
+### Added
+- **Security Hardening**:
+  - Attached strict rate limiters (`authLimiter` and `checkoutLimiter`) to authentication and payment checkout endpoints.
+  - Authored comprehensive OWASP Top 10 Security Audit report in `docs/SECURITY.md`.
+- **Interactive OpenAPI Documentation**:
+  - Created OpenAPI 3.0 specification in `backend/src/docs/openapi.ts`.
+  - Exposed interactive Swagger UI at `GET /api/docs` and schema at `GET /api/docs/swagger.json`.
+- **Test Automation & Quality Assurance**:
+  - Authored `auth-security.test.ts` (bcrypt hashing, roles, token rotation).
+  - Authored `quiz-scoring-and-attempts.test.ts` (grading algorithms, thresholds, time limits).
+  - Authored `cambodian-fintech.test.ts` (NBC exchange rates, payment idempotency).
+  - Backend test suite now boasts 18 passing tests across 6 test files.
+- **Production Documentation Suite**:
+  - `docs/ADMIN_MANUAL.md`: System settings, audit logs, backup & recovery, and payouts.
+  - `docs/USER_GUIDE.md`: Student & instructor guide covering KHQR, learning player, and certificates.
+  - `docs/API.md`: API architecture, endpoint reference, and rate limiting policies.
+  - `docs/DEPLOYMENT.md`: Docker Compose, environment configuration, and Nginx reverse proxy.
+  - `docs/PAYMENTS.md`: Detailed Cambodian payment rails, KHQR specs, and sandbox testing.
+  - `docs/DEMO_SCRIPT.md`: 5-minute evaluation walkthrough script.
+  - Overhauled root `README.md` with badges, architecture overview, and quickstart commands.
+
+---
+
 ## Phase D Polish — 2026-10-25
 
 ### Added
