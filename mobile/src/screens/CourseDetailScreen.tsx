@@ -17,6 +17,7 @@ import {
   hasActiveEnrollment,
   selfEnroll,
 } from "../api/courses";
+import { createCourseCheckout } from "../api/payments";
 import { CourseThumbnail } from "../components/CourseThumbnail";
 import type { CoursesStackParamList } from "../navigation/types";
 
@@ -102,6 +103,28 @@ export function CourseDetailScreen({ navigation, route }: Props) {
     try {
       await selfEnroll(course.id);
       setIsEnrolled(true);
+    } catch (err) {
+      setEnrollError(getApiErrorMessage(err));
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const handleBuy = async () => {
+    if (!course) return;
+    setEnrollError(null);
+    setEnrolling(true);
+    try {
+      const result = await createCourseCheckout(course.id, "khqr");
+      navigation.navigate("Checkout", {
+        paymentId: result.payment.id,
+        courseId: course.id,
+        courseTitle: course.title,
+        amount: Number(result.payment.amount),
+        currency: result.payment.currency,
+        gateway: result.payment.gateway,
+        expiresInSeconds: result.checkout?.expiresInSeconds ?? 300,
+      });
     } catch (err) {
       setEnrollError(getApiErrorMessage(err));
     } finally {
@@ -313,25 +336,34 @@ export function CourseDetailScreen({ navigation, route }: Props) {
             <>
               <Text style={styles.actionTitle}>Paid course</Text>
               <Text style={styles.actionBody}>
-                This course costs ${price.toFixed(2)} {course.currency ?? "USD"}.
-                Complete checkout on the web app to enroll, then return here to
-                access it.
+                Pay securely with KHQR or ABA PayWay. Course access unlocks
+                automatically after the payment is confirmed.
               </Text>
+              <View style={styles.priceRow}>
+                <Text style={styles.priceValue}>${price.toFixed(2)}</Text>
+                <Text style={styles.priceCurrency}>
+                  {course.currency ?? "USD"}
+                </Text>
+              </View>
               {enrollError ? (
                 <Text style={styles.errorText}>{enrollError}</Text>
               ) : null}
               <Pressable
+                testID="buy-course-button"
                 accessibilityRole="button"
-                onPress={handleEnroll}
+                onPress={handleBuy}
+                disabled={enrolling}
                 style={({ pressed }) => [
-                  styles.disabledButton,
+                  styles.primaryButton,
                   styles.fullWidthButton,
-                  pressed && styles.primaryButtonPressed,
+                  (pressed || enrolling) && styles.primaryButtonPressed,
                 ]}
               >
-                <Text style={styles.disabledButtonText}>
-                  Not available in mobile yet
-                </Text>
+                {enrolling ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Buy / Enroll</Text>
+                )}
               </Pressable>
             </>
           )}
@@ -524,6 +556,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 6,
   },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+    marginTop: 12,
+  },
+  priceValue: { color: "#10233f", fontSize: 30, fontWeight: "900" },
+  priceCurrency: { color: "#7a8699", fontSize: 12, fontWeight: "700" },
   primaryButton: {
     marginTop: 14,
     backgroundColor: "#0f766e",

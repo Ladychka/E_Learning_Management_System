@@ -12,6 +12,15 @@ export type CoursesStackParamList = {
   AssignmentList: { courseId: string; title?: string };
   AssignmentDetail: { assignmentId: string; title?: string };
   AssignmentSubmit: { assignmentId: string; title?: string };
+  Checkout: {
+    paymentId: string;
+    courseId: string;
+    courseTitle?: string;
+    amount?: number;
+    currency?: string;
+    gateway?: string;
+    expiresInSeconds?: number;
+  };
 };
 
 export type MainTabParamList = {
