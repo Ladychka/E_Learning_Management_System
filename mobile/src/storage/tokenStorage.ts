@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
@@ -6,20 +5,23 @@ const ACCESS_TOKEN_KEY = "elms_access_token";
 const REFRESH_TOKEN_KEY = "elms_refresh_token";
 
 const useSecureStore = Platform.OS !== "web";
+const webMemoryStore = new Map<string, string>();
 
 async function setItem(key: string, value: string) {
   if (useSecureStore) {
     await SecureStore.setItemAsync(key, value);
     return;
   }
-  await AsyncStorage.setItem(key, value);
+  // Web is a preview target for this mobile app. Tokens stay in memory only so
+  // they are never written to localStorage/IndexedDB.
+  webMemoryStore.set(key, value);
 }
 
 async function getItem(key: string) {
   if (useSecureStore) {
     return SecureStore.getItemAsync(key);
   }
-  return AsyncStorage.getItem(key);
+  return webMemoryStore.get(key) ?? null;
 }
 
 async function removeItem(key: string) {
@@ -27,7 +29,7 @@ async function removeItem(key: string) {
     await SecureStore.deleteItemAsync(key);
     return;
   }
-  await AsyncStorage.removeItem(key);
+  webMemoryStore.delete(key);
 }
 
 export const tokenStorage = {

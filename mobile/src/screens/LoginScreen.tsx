@@ -27,8 +27,12 @@ export function LoginScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      setError("Enter your email and password.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      setError("Enter your password.");
       return;
     }
 
@@ -77,6 +81,7 @@ export function LoginScreen({ navigation }: Props) {
               autoCorrect={false}
               keyboardType="email-address"
               textContentType="emailAddress"
+              maxLength={254}
               style={styles.input}
               editable={!submitting}
             />
@@ -90,6 +95,7 @@ export function LoginScreen({ navigation }: Props) {
               placeholderTextColor="#8a94a6"
               secureTextEntry={!showPassword}
               textContentType="password"
+              maxLength={128}
               style={styles.input}
               editable={!submitting}
               onSubmitEditing={handleLogin}
@@ -148,9 +154,7 @@ export function LoginScreen({ navigation }: Props) {
             </Text>
           </Pressable>
 
-          <Text style={styles.hint}>
-            Demo student: student@elms.edu / Student123!
-          </Text>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

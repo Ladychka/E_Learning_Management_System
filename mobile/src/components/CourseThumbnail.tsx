@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import { resolveAssetUrl } from "../config";
 
@@ -9,7 +9,7 @@ type CourseThumbnailProps = {
   height?: number;
 };
 
-export function CourseThumbnail({
+export const CourseThumbnail = memo(function CourseThumbnail({
   title,
   thumbnailUrl,
   level,
@@ -42,7 +42,7 @@ export function CourseThumbnail({
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,12 +1,21 @@
 import { Platform } from "react-native";
 
-const defaultBaseUrl = Platform.select({
+const devBaseUrl = Platform.select({
   android: "http://10.0.2.2:5000/api/v1",
   default: "http://localhost:5000/api/v1",
 });
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || defaultBaseUrl;
+  process.env.EXPO_PUBLIC_API_BASE_URL || devBaseUrl;
+
+const isDevelopment =
+  typeof __DEV__ !== "undefined" ? __DEV__ : process.env.NODE_ENV !== "production";
+
+if (!isDevelopment && !/^https:\/\//i.test(API_BASE_URL)) {
+  throw new Error(
+    "Release builds require an HTTPS EXPO_PUBLIC_API_BASE_URL. Refusing to use an insecure API URL."
+  );
+}
 
 const ASSET_BASE_URL = API_BASE_URL.replace(/\/api\/v\d+\/?$/i, "");
 

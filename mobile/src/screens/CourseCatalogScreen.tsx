@@ -134,7 +134,7 @@ export function CourseCatalogScreen({ navigation }: Props) {
     setPriceFilter("ALL");
   };
 
-  const renderCourse = ({ item }: { item: CourseSummary }) => {
+  const renderCourse = useCallback(({ item }: { item: CourseSummary }) => {
     const price = Number(item.price ?? 0);
     const isFree = item.isFree || !price || price === 0;
 
@@ -200,7 +200,7 @@ export function CourseCatalogScreen({ navigation }: Props) {
         </View>
       </Pressable>
     );
-  };
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
