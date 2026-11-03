@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { commentApi } from "../lib/api";
-import { MessageSquare, Send, Reply, Trash2 } from "lucide-react";
+import { MessageSquare, Send, Reply, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface CommentItem {
@@ -101,9 +101,9 @@ export const LessonDiscussion: React.FC<{ lessonId: string; currentUserId?: stri
             <button
               type="button"
               onClick={() => setReplyTo(null)}
-              className="font-bold text-primary-600 hover:text-primary-800"
+              className="inline-flex items-center gap-1 font-bold text-primary-600 hover:text-primary-800"
             >
-              ✕ Cancel
+              <X className="h-3.5 w-3.5" /> Cancel
             </button>
           </div>
         )}

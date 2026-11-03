@@ -5,13 +5,13 @@
 
 ---
 
-## 📋 Presentation Overview
+## Presentation Overview
 - **Duration:** 10–15 Minutes (8 mins slides + 5 mins live demo + 2 mins Q&A)
 - **Primary Focus:** How this platform addresses Cambodian financial literacy, digital payment integration (KHQR/Bakong), and modern software architecture.
 
 ---
 
-## 🖥️ Slide-by-Slide Deck & Speaker Notes
+## Slide-by-Slide Deck & Speaker Notes
 
 ### Slide 1: Title & Introduction
 - **Slide Title:** ELMS — Next-Generation Fintech E-Learning Management System
@@ -99,7 +99,7 @@
 ### Slide 8: User Experience, Dark Mode & Localization
 - **Slide Title:** Production-Grade Design System & Accessibility
 - **Key Highlights:**
-  - **Bilingual Support (US-097):** Seamless instant toggling between English 🇺🇸 and authentic Khmer 🇰🇭 (`Kantumruy Pro` & `Battambang` typography).
+  - **Bilingual Support (US-097):** Seamless instant toggling between English and authentic Khmer (`Kantumruy Pro` & `Battambang` typography).
   - **Fintech Theme:** Emerald-500 primary, Navy-900 slate neutrals, and Gold badges.
   - **Dark Mode:** System preference and manual toggle.
   - **Data Saver Mode:** Optimizes streaming bitrate for students on mobile network packages.
@@ -144,12 +144,12 @@
 
 ---
 
-## 🎬 Live Demo Checklist (5 Minutes)
+## Live Demo Checklist (5 Minutes)
 
 Follow this sequence during the practical demo:
 1. **Landing & Localization (1 min):**
    - Show homepage in Light Mode, toggle to Dark Mode.
-   - Switch language to **🇰🇭 ភាសាខ្មែរ** to demonstrate font rendering and Khmer terms.
+   - Switch language to **KM ភាសាខ្មែរ** to demonstrate font rendering and Khmer terms.
 2. **Finance Hub (1.5 mins):**
    - Click **Finance Tools** (`/finance-tools`).
    - Run a quick Loan EMI calculation ($10,000, 12%, 24 months).
@@ -157,7 +157,7 @@ Follow this sequence during the practical demo:
 3. **KHQR Checkout Flow (1.5 mins):**
    - Go to **Courses**, select a paid course, and click **Enroll**.
    - Select **KHQR** payment method: show 5:00 countdown timer.
-   - Click **⚡ Simulate Success (Sandbox Demo)** to show automatic detection and instant enrollment.
+   - Click **Simulate Success (Sandbox Demo)** to show automatic detection and instant enrollment.
 4. **Learning Player & Certificate (1 min):**
    - Open a lesson, show timestamped notes and calculator slide-over drawer.
    - Navigate to **Certificate Verification** (`/verify/CERT-2026-001`) to show public QR verification.

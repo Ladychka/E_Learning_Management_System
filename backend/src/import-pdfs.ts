@@ -60,7 +60,7 @@ function findVideoFile(): string | null {
 }
 
 async function importLessons() {
-  console.log("📚 Starting PDF and Video import...\n");
+  console.log(" Starting PDF and Video import...\n");
 
   // 1. Find or create Finance category
   let financeCategory = await prisma.category.findUnique({
@@ -76,9 +76,9 @@ async function importLessons() {
         sortOrder: 0,
       },
     });
-    console.log("✅ Created Finance category:", financeCategory.id);
+    console.log(" Created Finance category:", financeCategory.id);
   } else {
-    console.log("📁 Using existing Finance category:", financeCategory.id);
+    console.log(" Using existing Finance category:", financeCategory.id);
   }
 
   // 2. Find instructor
@@ -90,7 +90,7 @@ async function importLessons() {
   if (!instructor) {
     throw new Error("No instructor or admin found. Run npm run db:seed first.");
   }
-  console.log("👤 Instructor:", instructor.email, "\n");
+  console.log(" Instructor:", instructor.email, "\n");
 
   // 3. Create or update course
   let course = await prisma.course.findUnique({
@@ -125,9 +125,9 @@ async function importLessons() {
         categoryId: financeCategory.id,
       },
     });
-    console.log("✅ Created course:", course.title, "\n");
+    console.log(" Created course:", course.title, "\n");
   } else {
-    console.log("📁 Using existing course:", course.title, "\n");
+    console.log(" Using existing course:", course.title, "\n");
   }
 
   // 4. Import Video Lesson (Chapter 01)
@@ -140,7 +140,7 @@ async function importLessons() {
       fs.copyFileSync(videoSrc, destVideo);
     }
     videoContentUrl = "/uploads/videos/video-chapter01.mp4";
-    console.log("🎥 Video source ready:", videoContentUrl);
+    console.log(" Video source ready:", videoContentUrl);
   }
 
   // Check or create Video Module
@@ -179,7 +179,7 @@ async function importLessons() {
         sortOrder: 0,
       },
     });
-    console.log("✅ Created Video Lesson: Chapter 01: Financial Foundations");
+    console.log(" Created Video Lesson: Chapter 01: Financial Foundations");
   }
 
   // 5. Import PDF Lessons
@@ -188,7 +188,7 @@ async function importLessons() {
     const sourcePath = findPdfFile(file);
 
     if (!sourcePath) {
-      console.warn(`⚠️  Skipping missing file: ${file}`);
+      console.warn(`  Skipping missing file: ${file}`);
       continue;
     }
 
@@ -249,7 +249,7 @@ async function importLessons() {
           attachments: [],
         },
       });
-      console.log(`  📄 Lesson created: ${title} -> ${contentUrl}`);
+      console.log(`   Lesson created: ${title} -> ${contentUrl}`);
     } else {
       await prisma.lesson.update({
         where: { id: existingLesson.id },
@@ -261,7 +261,7 @@ async function importLessons() {
           isPreview: false,
         },
       });
-      console.log(`  🔄 Lesson updated: ${title} -> ${contentUrl}`);
+      console.log(`   Lesson updated: ${title} -> ${contentUrl}`);
     }
   }
 
@@ -322,7 +322,7 @@ async function importLessons() {
           attachments: [],
         },
       });
-      console.log(`  📄 Report Lesson created: ${rf.title} -> ${contentUrl}`);
+      console.log(`   Report Lesson created: ${rf.title} -> ${contentUrl}`);
     }
   }
 
@@ -341,10 +341,10 @@ async function importLessons() {
         enrolledBy: student.id,
       },
     });
-    console.log("\n🎓 Enrolled student@elms.edu in course:", course.title);
+    console.log("\n Enrolled student@elms.edu in course:", course.title);
   }
 
-  console.log("\n🎉 All PDF and Video lessons imported successfully!");
+  console.log("\n All PDF and Video lessons imported successfully!");
 }
 
 importLessons()

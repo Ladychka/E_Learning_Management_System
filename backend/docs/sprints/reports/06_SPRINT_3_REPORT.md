@@ -3,7 +3,7 @@
 **Sprint:** 3  
 **Duration:** Weeks 5–6  
 **Dates:** 2026-08-08 to 2026-08-21  
-**Status:** 🔄 In Progress — Core APIs Implemented  
+**Status:** In progress In Progress — Core APIs Implemented  
 **Goal:** Build enrollment workflow and assignment/quiz functionality.
 
 ---
@@ -12,16 +12,16 @@
 
 | Status | Item |
 |--------|------|
-| ✅ Implemented | Enrollment CRUD API (self-enroll, admin enroll, approve, unenroll, bulk enroll) |
-| ✅ Implemented | Waitlist API (join, leave, process/approve with auto-enrollment) |
-| ✅ Implemented | Assignment CRUD API (create, update, delete, list, detail) |
-| ✅ Implemented | Submission API (submit, list, grade with pass/fail calculation) |
-| ✅ Implemented | Quiz Taking API (start attempt, submit answers, auto-grade MCQ/TrueFalse) |
-| ✅ Implemented | Quiz Attempt Limit & Timer Enforcement |
-| ✅ Implemented | Certificate Generation API (issue, verify by number, list) |
-| ✅ Implemented | Enrollment Report (summary counts + recent enrollments) |
-| ⏳ Pending | Frontend pages for Sprint 3 features |
-| ⏳ Pending | Unit tests for enrollment, quiz grading, and assignment logic |
+| Yes Implemented | Enrollment CRUD API (self-enroll, admin enroll, approve, unenroll, bulk enroll) |
+| Yes Implemented | Waitlist API (join, leave, process/approve with auto-enrollment) |
+| Yes Implemented | Assignment CRUD API (create, update, delete, list, detail) |
+| Yes Implemented | Submission API (submit, list, grade with pass/fail calculation) |
+| Yes Implemented | Quiz Taking API (start attempt, submit answers, auto-grade MCQ/TrueFalse) |
+| Yes Implemented | Quiz Attempt Limit & Timer Enforcement |
+| Yes Implemented | Certificate Generation API (issue, verify by number, list) |
+| Yes Implemented | Enrollment Report (summary counts + recent enrollments) |
+| Pending Pending | Frontend pages for Sprint 3 features |
+| Pending Pending | Unit tests for enrollment, quiz grading, and assignment logic |
 
 ---
 
@@ -168,9 +168,9 @@
 
 | Test Type | Status | Notes |
 |-----------|--------|-------|
-| Type Safety (Backend) | ✅ | `tsc --noEmit` passes with zero errors |
-| Database Migration | ✅ | Prisma migration applied successfully |
-| Prisma Client Generation | ✅ | Client regenerated after schema changes |
+| Type Safety (Backend) | Yes | `tsc --noEmit` passes with zero errors |
+| Database Migration | Yes | Prisma migration applied successfully |
+| Prisma Client Generation | Yes | Client regenerated after schema changes |
 
 ---
 
@@ -195,4 +195,4 @@
 ---
 
 *Report Prepared: 2026-07-28*  
-*Sprint 3 Status: 🔄 IN PROGRESS — Backend APIs complete, frontend pending*
+*Sprint 3 Status: In progress IN PROGRESS — Backend APIs complete, frontend pending*

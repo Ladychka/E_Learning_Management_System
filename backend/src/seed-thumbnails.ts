@@ -17,9 +17,9 @@ async function seedThumbnails() {
         where: { id: course.id },
         data: { thumbnailUrl: m.url },
       });
-      console.log(`✅ Updated thumbnail for: ${course.title} (${m.slug})`);
+      console.log(` Updated thumbnail for: ${course.title} (${m.slug})`);
     } else {
-      console.log(`⚠️ Course not found: ${m.slug}`);
+      console.log(` Course not found: ${m.slug}`);
     }
   }
 
@@ -29,9 +29,9 @@ async function seedThumbnails() {
       where: { id: "4e15e5a3-067b-48c8-bf6d-36203c5c1680" },
       data: { thumbnailUrl: "/uploads/thumbnails/personal-finance-mastery.svg" },
     });
-    console.log(`✅ Updated thumbnail for: Personal Finance Mastery (published duplicate)`);
+    console.log(` Updated thumbnail for: Personal Finance Mastery (published duplicate)`);
   } catch {
-    console.log(`⚠️ Could not update duplicate Personal Finance`);
+    console.log(` Could not update duplicate Personal Finance`);
   }
 
   console.log("Done!");

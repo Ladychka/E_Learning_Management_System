@@ -77,8 +77,8 @@ To facilitate testing without requiring live banking credentials, ELMS provides 
   }
   ```
 - **UI Trigger:**
-  - On the Web checkout modal: Click **⚡ Simulate Success (Sandbox Demo)**.
-  - On the Mobile checkout screen: Tap **⚡ Simulate Success (Sandbox Demo)**.
+  - On the Web checkout modal: Click **Simulate Success (Sandbox Demo)**.
+  - On the Mobile checkout screen: Tap **Simulate Success (Sandbox Demo)**.
   - The payment transitions from `PENDING` to `COMPLETED` immediately and grants course enrollment access.
 
 ---

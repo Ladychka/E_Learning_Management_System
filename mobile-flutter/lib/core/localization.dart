@@ -10,11 +10,10 @@ class AppLocale {
     required this.code,
     required this.name,
     required this.nativeName,
-    required this.flag,
   });
 
-  static const en = AppLocale(code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸');
-  static const km = AppLocale(code: 'km', name: 'Khmer', nativeName: 'ភាសាខ្មែរ', flag: '🇰🇭');
+  static const en = AppLocale(code: 'en', name: 'English', nativeName: 'English');
+  static const km = AppLocale(code: 'km', name: 'Khmer', nativeName: 'ភាសាខ្មែរ');
 
   static const supportedLocales = [Locale('en'), Locale('km')];
 }

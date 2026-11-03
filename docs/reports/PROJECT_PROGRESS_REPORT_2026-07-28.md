@@ -17,17 +17,17 @@ The ELMS project is a fintech e-learning platform built with Node.js/Express bac
 
 | Objective | Status |
 |-----------|--------|
-| Student authentication & role management | ✅ Complete |
-| Course catalog & curriculum builder | ✅ Complete |
-| Enrollment & waitlist system | ✅ Backend Complete |
-| Assignment creation & submission | ✅ Backend Complete |
-| Quiz builder with auto-grading | ✅ Complete |
-| Certificate generation | ✅ Backend Complete |
-| Digital payment integration (KHQR/ABA/Bakong) | ⏳ Not Started |
-| Grading system & gradebook | 🔄 Partial (Grade records created) |
-| Communication tools (chat, forums) | ⏳ Not Started |
-| Analytics dashboard | ⏳ Not Started |
-| Flutter mobile app | ⏳ Not Started |
+| Student authentication & role management | Complete |
+| Course catalog & curriculum builder | Complete |
+| Enrollment & waitlist system | Backend Complete |
+| Assignment creation & submission | Backend Complete |
+| Quiz builder with auto-grading | Complete |
+| Certificate generation | Backend Complete |
+| Digital payment integration (KHQR/ABA/Bakong) | Pending Not Started |
+| Grading system & gradebook | In progress Partial (Grade records created) |
+| Communication tools (chat, forums) | Pending Not Started |
+| Analytics dashboard | Pending Not Started |
+| Flutter mobile app | Pending Not Started |
 
 ---
 
@@ -35,7 +35,7 @@ The ELMS project is a fintech e-learning platform built with Node.js/Express bac
 
 ### Sprint 1 — Foundation, Authentication & Basic Course Management
 **Duration:** Weeks 1–2 (2026-07-10 to 2026-07-24)  
-**Status:** ✅ COMPLETE
+**Status:** COMPLETE
 
 #### Deliverables
 - **Backend:** Node.js + Express + TypeScript project scaffold
@@ -53,7 +53,7 @@ US-001 through US-015 — Authentication, User Management, Role Management, Pass
 
 ### Sprint 2 — Course & Curriculum Management
 **Duration:** Weeks 3–4 (2026-07-25 to 2026-08-07)  
-**Status:** ✅ COMPLETE
+**Status:** COMPLETE
 
 #### Deliverables
 - **Database:** Added `Quiz`, `Question`, `LessonVersion` tables; `dripDays` and `version` fields to `lessons`
@@ -68,7 +68,7 @@ US-016 through US-030 — Course Thumbnail, Pricing, Status, Prerequisites, Sche
 
 ### Sprint 3 — Enrollment & Assessment Module
 **Duration:** Weeks 5–6 (2026-08-08 to 2026-08-21)  
-**Status:** 🔄 BACKEND COMPLETE, Frontend Pending
+**Status:** In progress BACKEND COMPLETE, Frontend Pending
 
 #### Deliverables
 - **Database:** Added `Waitlist`, `QuizAttempt`, `QuizAnswer`, `Certificate` tables
@@ -150,22 +150,22 @@ Enrollment → Certificate
 
 | Category | Endpoints | Status |
 |----------|-----------|--------|
-| Authentication | 11 | ✅ Complete |
-| Users | 6 | ✅ Complete |
-| Courses | 5 | ✅ Complete |
-| Categories | 5 | ✅ Complete |
-| Modules | 5 | ✅ Complete |
-| Lessons | 6 | ✅ Complete |
-| Quizzes (structure) | 7 | ✅ Complete |
-| Uploads | 2 | ✅ Complete |
-| **Enrollment** | **9** | **✅ Complete** |
-| **Waitlist** | **5** | **✅ Complete** |
-| **Assignments** | **8** | **✅ Complete** |
-| **Quiz Taking** | **5** | **✅ Complete** |
-| **Certificates** | **4** | **✅ Complete** |
-| Payments | 0 | ⏳ Not Started |
-| Communication | 0 | ⏳ Not Started |
-| Analytics | 0 | ⏳ Not Started |
+| Authentication | 11 | Complete |
+| Users | 6 | Complete |
+| Courses | 5 | Complete |
+| Categories | 5 | Complete |
+| Modules | 5 | Complete |
+| Lessons | 6 | Complete |
+| Quizzes (structure) | 7 | Complete |
+| Uploads | 2 | Complete |
+| **Enrollment** | **9** | **Complete** |
+| **Waitlist** | **5** | **Complete** |
+| **Assignments** | **8** | **Complete** |
+| **Quiz Taking** | **5** | **Complete** |
+| **Certificates** | **4** | **Complete** |
+| Payments | 0 | Pending Not Started |
+| Communication | 0 | Pending Not Started |
+| Analytics | 0 | Pending Not Started |
 
 **Total Backend Endpoints Implemented:** 78
 
@@ -175,16 +175,16 @@ Enrollment → Certificate
 
 | Measure | Status | Details |
 |---------|--------|---------|
-| JWT Authentication | ✅ | Access (7d) + Refresh (30d) with rotation |
-| Password Hashing | ✅ | bcrypt (12 rounds) |
-| Role-Based Access | ✅ | STUDENT / INSTRUCTOR / ADMIN |
-| Rate Limiting | ✅ | 100 requests per 15 minutes per IP |
-| CORS | ✅ | Restricted to known frontend origin |
-| Helmet Headers | ✅ | Security headers via Helmet.js |
-| Input Validation | ✅ | Zod schemas for all endpoints |
-| Audit Logging | ✅ | All mutations logged with actor, action, entity, before/after, IP |
-| File Upload Validation | ✅ | MIME type whitelist per category |
-| Ownership Checks | ✅ | Instructors can only modify their own content |
+| JWT Authentication | Yes | Access (7d) + Refresh (30d) with rotation |
+| Password Hashing | Yes | bcrypt (12 rounds) |
+| Role-Based Access | Yes | STUDENT / INSTRUCTOR / ADMIN |
+| Rate Limiting | Yes | 100 requests per 15 minutes per IP |
+| CORS | Yes | Restricted to known frontend origin |
+| Helmet Headers | Yes | Security headers via Helmet.js |
+| Input Validation | Yes | Zod schemas for all endpoints |
+| Audit Logging | Yes | All mutations logged with actor, action, entity, before/after, IP |
+| File Upload Validation | Yes | MIME type whitelist per category |
+| Ownership Checks | Yes | Instructors can only modify their own content |
 
 ---
 
@@ -192,14 +192,14 @@ Enrollment → Certificate
 
 | Test Type | Sprint 1 | Sprint 2 | Sprint 3 | Notes |
 |-----------|----------|----------|----------|-------|
-| Type Safety (tsc --noEmit) | ✅ | ✅ | ✅ | Zero errors all sprints |
-| Database Migration | ✅ | ✅ | ✅ | All migrations applied cleanly |
-| Prisma Client Generation | ✅ | ✅ | ✅ | Client regenerated after changes |
-| Manual API Review | ✅ | ✅ | ✅ | All controllers/routes reviewed |
-| Frontend Route Integration | ✅ | ✅ | ⏳ | Sprint 3 frontend pending |
-| Unit Tests | ⏳ | ⏳ | ⏳ | Vitest configured, tests pending |
-| Integration Tests | ⏳ | ⏳ | ⏳ | Not started |
-| Security Tests | ⏳ | ⏳ | ⏳ | Not started |
+| Type Safety (tsc --noEmit) | Yes | Yes | Yes | Zero errors all sprints |
+| Database Migration | Yes | Yes | Yes | All migrations applied cleanly |
+| Prisma Client Generation | Yes | Yes | Yes | Client regenerated after changes |
+| Manual API Review | Yes | Yes | Yes | All controllers/routes reviewed |
+| Frontend Route Integration | Yes | Yes | Pending | Sprint 3 frontend pending |
+| Unit Tests | Pending | Pending | Pending | Vitest configured, tests pending |
+| Integration Tests | Pending | Pending | Pending | Not started |
+| Security Tests | Pending | Pending | Pending | Not started |
 
 ---
 

@@ -9,6 +9,7 @@ import {
   Award,
   Zap,
   BookOpen,
+  Languages,
 } from "lucide-react";
 
 export const OnboardingModal: React.FC = () => {
@@ -82,7 +83,7 @@ export const OnboardingModal: React.FC = () => {
                     : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
                 }`}
               >
-                <span className="text-2xl block mb-2">🇺🇸</span>
+                <Languages className="h-7 w-7 text-emerald-600 mb-2" />
                 <span className="font-bold text-sm block">English</span>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400">International FinTech Standard</span>
               </button>
@@ -96,7 +97,7 @@ export const OnboardingModal: React.FC = () => {
                     : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
                 }`}
               >
-                <span className="text-2xl block mb-2">🇰🇭</span>
+                <Languages className="h-7 w-7 text-emerald-600 mb-2" />
                 <span className="font-bold text-sm block">ភាសាខ្មែរ</span>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400">សម្រាប់សិក្ខាកាមកម្ពុជា</span>
               </button>

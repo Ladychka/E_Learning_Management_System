@@ -77,14 +77,14 @@ Three roles with distinct permissions:
 
 | Permission | Student | Instructor | Admin |
 |------------|---------|------------|-------|
-| View published courses | ✅ | ✅ | ✅ |
-| Create/manage own courses | ❌ | ✅ | ✅ |
-| Manage all courses | ❌ | ❌ | ✅ |
-| Manage users | ❌ | ❌ | ✅ |
-| Manage categories | ❌ | ❌ | ✅ |
-| Grade submissions | ❌ | ✅* | ✅ |
-| View admin dashboard | ❌ | ❌ | ✅ |
-| Configure system settings | ❌ | ❌ | ✅ |
+| View published courses | Yes | Yes | Yes |
+| Create/manage own courses | No | Yes | Yes |
+| Manage all courses | No | No | Yes |
+| Manage users | No | No | Yes |
+| Manage categories | No | No | Yes |
+| Grade submissions | No | Yes* | Yes |
+| View admin dashboard | No | No | Yes |
+| Configure system settings | No | No | Yes |
 
 \* Instructor can grade their own course submissions only.
 

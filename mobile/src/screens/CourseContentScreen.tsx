@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { getApiErrorMessage } from "../api/client";
@@ -149,7 +150,7 @@ export function CourseContentScreen({ navigation, route }: Props) {
                 ]}
               >
                 {lesson.isCompleted ? (
-                  <Text style={styles.statusCheck}>✓</Text>
+                  <Ionicons name="checkmark" size={14} color="#ffffff" />
                 ) : null}
               </View>
 
@@ -451,7 +452,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#0f766e",
     borderColor: "#0f766e",
   },
-  statusCheck: { color: "#ffffff", fontSize: 13, fontWeight: "800" },
   lessonBody: { flex: 1 },
   lessonTitle: {
     color: "#10233f",

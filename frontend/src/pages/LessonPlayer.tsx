@@ -157,7 +157,9 @@ export const LessonPlayer = () => {
       const savedTime = localStorage.getItem(`lesson_pos_${lesson.id}`);
       if (savedTime && Number(savedTime) > 2) {
         videoRef.current.currentTime = Number(savedTime);
-        toast(`Resumed from ${formatSeconds(Number(savedTime))}`, { icon: "⏱️" });
+        toast(`Resumed from ${formatSeconds(Number(savedTime))}`, {
+          icon: <Clock className="h-4 w-4" />,
+        });
       }
     } catch {
       // quiet

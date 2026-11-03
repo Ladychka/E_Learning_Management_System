@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Loader2,
   GripVertical,
+  Check,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -426,7 +427,12 @@ export const QuizBuilder = () => {
                   <ul className="mt-2 space-y-1 text-sm text-gray-600">
                     {q.options.map((opt, i) => (
                       <li key={i} className={opt === q.correctAnswer ? "font-medium text-green-600" : ""}>
-                        {opt} {opt === q.correctAnswer && "✓"}
+                        <span className="inline-flex items-center gap-1">
+                          {opt}
+                          {opt === q.correctAnswer && (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                        </span>
                       </li>
                     ))}
                   </ul>

@@ -11,6 +11,7 @@ import {
   Split,
   Sparkles,
   Lock,
+  CheckCircle,
 } from "lucide-react";
 import { courseApi, paymentApi, enrollmentApi } from "@/lib/api";
 
@@ -294,7 +295,9 @@ export function Checkout() {
                           <span className="font-bold text-slate-800 dark:text-slate-200">
                             ${installmentAmountUsd.toFixed(2)} (≈ {Math.round(installmentAmountUsd * NBC_EXCHANGE_RATE).toLocaleString()} ៛)
                           </span>
-                          <span className="mt-0.5 text-[9px] font-semibold text-emerald-600">✓ Unlocks Full Access</span>
+                          <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-600">
+                            <CheckCircle className="h-3 w-3" /> Unlocks Full Access
+                          </span>
                         </div>
                         <div className="flex flex-col rounded-lg border border-blue-100 bg-white p-2 dark:border-blue-900 dark:bg-slate-800">
                           <span className="text-[10px] font-bold uppercase text-slate-400">Remaining Balance</span>

@@ -11,17 +11,17 @@
 
 | Status | Item |
 |--------|------|
-| ✅ Achieved | Module CRUD API with ownership checks and auto-sort ordering |
-| ✅ Achieved | Lesson CRUD API supporting video, PDF, text, and quiz content types |
-| ✅ Achieved | Quiz structure API with MCQ, True/False, and Short Answer questions |
-| ✅ Achieved | File upload infrastructure with type validation and local storage |
-| ✅ Achieved | Content versioning for lessons (snapshot on content change) |
-| ✅ Achieved | Bulk reorder endpoints for modules, lessons, and questions |
-| ✅ Achieved | Course settings page (thumbnail, pricing, schedule, prerequisites) |
-| ✅ Achieved | Course builder UI with nested module/lesson tree view |
-| ✅ Achieved | Quiz builder UI with question type support |
-| ✅ Achieved | Free preview toggle for lessons |
-| ✅ Achieved | Drip content scheduling field (`dripDays`) |
+| Achieved | Module CRUD API with ownership checks and auto-sort ordering |
+| Achieved | Lesson CRUD API supporting video, PDF, text, and quiz content types |
+| Achieved | Quiz structure API with MCQ, True/False, and Short Answer questions |
+| Achieved | File upload infrastructure with type validation and local storage |
+| Achieved | Content versioning for lessons (snapshot on content change) |
+| Achieved | Bulk reorder endpoints for modules, lessons, and questions |
+| Achieved | Course settings page (thumbnail, pricing, schedule, prerequisites) |
+| Achieved | Course builder UI with nested module/lesson tree view |
+| Achieved | Quiz builder UI with question type support |
+| Achieved | Free preview toggle for lessons |
+| Achieved | Drip content scheduling field (`dripDays`) |
 
 ---
 
@@ -29,21 +29,21 @@
 
 | ID | User Story | Status | Acceptance Criteria Met |
 |----|-----------|--------|------------------------|
-| US-016 | Course Thumbnail | ✅ | Instructors can upload images to local storage. URL saved to course table. Preview displayed in settings. |
-| US-017 | Course Pricing | ✅ | Price, currency, and isFree fields editable. Free courses hide price input. |
-| US-018 | Course Status | ✅ | Draft → Published → Archived workflow. Published status sets `publishedAt` timestamp automatically. |
-| US-019 | Course Prerequisites | ✅ | Comma-separated prerequisites parsed into JSON array and saved to course record. |
-| US-020 | Course Schedule | ✅ | `scheduledAt` datetime picker available. Course can be scheduled for future publish. |
-| US-021 | Add Modules/Sections | ✅ | Instructors create named modules under courses. Auto `sortOrder` assignment. |
-| US-022 | Add Lessons | ✅ | Lessons created under modules with content type (video/pdf/text/quiz), duration, and URL. |
-| US-023 | Upload Video | ✅ | Upload endpoint accepts MP4/WebM/MOV up to 500MB. Files stored in `uploads/videos/`. |
-| US-024 | Upload Documents/PDF | ✅ | Upload endpoint accepts PDF/DOC/DOCX/TXT/ZIP. Files stored in `uploads/documents/`. |
-| US-025 | Attach Quiz to Lesson | ✅ | Quiz created per lesson (1:1). Title, time limit, max attempts, passing score configurable. |
-| US-026 | Reorder Content | ✅ | Bulk `sortOrder` update endpoints for modules and lessons. Transaction-safe. |
-| US-027 | Content Preview | ✅ | `isPreview` toggle on lessons. Preview lessons visible to non-enrolled users. |
-| US-028 | Downloadable Resources | ✅ | `attachments` JSON field on lessons supports supplementary file metadata. |
-| US-029 | Content Versioning | ✅ | On `contentUrl` change, previous version snapshot saved to `LessonVersion` table. |
-| US-030 | Drip Content Scheduling | ✅ | `dripDays` field on lessons. Availability calculated from enrollment date (logic ready for Sprint 3). |
+| US-016 | Course Thumbnail | Yes | Instructors can upload images to local storage. URL saved to course table. Preview displayed in settings. |
+| US-017 | Course Pricing | Yes | Price, currency, and isFree fields editable. Free courses hide price input. |
+| US-018 | Course Status | Yes | Draft → Published → Archived workflow. Published status sets `publishedAt` timestamp automatically. |
+| US-019 | Course Prerequisites | Yes | Comma-separated prerequisites parsed into JSON array and saved to course record. |
+| US-020 | Course Schedule | Yes | `scheduledAt` datetime picker available. Course can be scheduled for future publish. |
+| US-021 | Add Modules/Sections | Yes | Instructors create named modules under courses. Auto `sortOrder` assignment. |
+| US-022 | Add Lessons | Yes | Lessons created under modules with content type (video/pdf/text/quiz), duration, and URL. |
+| US-023 | Upload Video | Yes | Upload endpoint accepts MP4/WebM/MOV up to 500MB. Files stored in `uploads/videos/`. |
+| US-024 | Upload Documents/PDF | Yes | Upload endpoint accepts PDF/DOC/DOCX/TXT/ZIP. Files stored in `uploads/documents/`. |
+| US-025 | Attach Quiz to Lesson | Yes | Quiz created per lesson (1:1). Title, time limit, max attempts, passing score configurable. |
+| US-026 | Reorder Content | Yes | Bulk `sortOrder` update endpoints for modules and lessons. Transaction-safe. |
+| US-027 | Content Preview | Yes | `isPreview` toggle on lessons. Preview lessons visible to non-enrolled users. |
+| US-028 | Downloadable Resources | Yes | `attachments` JSON field on lessons supports supplementary file metadata. |
+| US-029 | Content Versioning | Yes | On `contentUrl` change, previous version snapshot saved to `LessonVersion` table. |
+| US-030 | Drip Content Scheduling | Yes | `dripDays` field on lessons. Availability calculated from enrollment date (logic ready for Sprint 3). |
 
 ---
 
@@ -153,13 +153,13 @@ Lesson → LessonVersion (1:N)
 
 | Test Type | Status | Notes |
 |-----------|--------|-------|
-| Type Safety (Backend) | ✅ | `tsc --noEmit` passes with zero errors |
-| Type Safety (Frontend) | ✅ | `tsc --noEmit` passes with zero errors |
-| Database Migration | ✅ | Prisma migration applied successfully to PostgreSQL |
-| Prisma Client Generation | ✅ | Client regenerated after schema changes |
-| Manual API Structure Review | ✅ | All new controllers, routes, and validations reviewed |
-| Frontend Route Integration | ✅ | New pages wired into React Router with role guards |
-| File Upload Validation | ✅ | MIME type whitelist enforced per folder |
+| Type Safety (Backend) | Yes | `tsc --noEmit` passes with zero errors |
+| Type Safety (Frontend) | Yes | `tsc --noEmit` passes with zero errors |
+| Database Migration | Yes | Prisma migration applied successfully to PostgreSQL |
+| Prisma Client Generation | Yes | Client regenerated after schema changes |
+| Manual API Structure Review | Yes | All new controllers, routes, and validations reviewed |
+| Frontend Route Integration | Yes | New pages wired into React Router with role guards |
+| File Upload Validation | Yes | MIME type whitelist enforced per folder |
 
 ---
 
@@ -220,4 +220,4 @@ Lesson → LessonVersion (1:N)
 ---
 
 *Report Prepared: 2026-07-27*  
-*Sprint 2 Status: ✅ COMPLETE*
+*Sprint 2 Status: COMPLETE*

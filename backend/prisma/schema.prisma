@@ -475,7 +475,7 @@ model Payment {
   subscriptionId String? @map("subscription_id")
   amount        Decimal  @db.Decimal(10, 2)
   currency      String   @default("USD")
-  status        String   @default("pending") // pending, completed, failed, refunded
+  status        String   @default("pending") // pending, completed, failed, refunded, expired
   gateway       String   // khqr, aba_payway, bakong
   gatewayRef    String?  @map("gateway_ref")
   couponCode    String?  @map("coupon_code")

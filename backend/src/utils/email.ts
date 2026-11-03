@@ -99,7 +99,7 @@ export const sendGradePublishedEmail = async ({
       <p>Your grade for <strong>${assessmentTitle}</strong> in <strong>${courseTitle}</strong> has been published.</p>
       <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin:16px 0;">
         <p style="margin:0;font-size:24px;font-weight:bold;">${percentage}% <span style="font-size:16px;color:#6c757d;">(${letterGrade})</span></p>
-        <p style="margin:8px 0 0 0;color:${passFail === "pass" ? "#28a745" : "#dc3545"};font-weight:bold;">${passFail === "pass" ? "✓ Passed" : "✗ Did Not Pass"}</p>
+        <p style="margin:8px 0 0 0;color:${passFail === "pass" ? "#28a745" : "#dc3545"};font-weight:bold;">${passFail === "pass" ? "Passed" : "Did Not Pass"}</p>
       </div>
       <a href="${gradeUrl}" style="padding:10px 20px;background:#007bff;color:white;text-decoration:none;border-radius:4px;">View My Grades</a>
       <p style="color:#6c757d;font-size:12px;">This is an automated notification from ELMS.</p>

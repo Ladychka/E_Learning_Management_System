@@ -12,7 +12,7 @@ Welcome to the **Fintech E-Learning Management System (ELMS)**. This platform em
 - **Admin Account:** `admin@elms.edu.kh` / `Password123!`
 
 ### Personalizing Your Learning Experience
-- **Language Switcher:** Toggle between **English 🇺🇸** and **ភាសាខ្មែរ 🇰🇭** at any time using the header toggle on Web or under Profile on Mobile.
+- **Language Switcher:** Toggle between **English** and **ភាសាខ្មែរ KM** at any time using the header toggle on Web or under Profile on Mobile.
 - **Data Saver Mode:** Toggle Data Saver in your preferences if you are on a metered or 3G/4G mobile connection in Cambodia.
 
 ---

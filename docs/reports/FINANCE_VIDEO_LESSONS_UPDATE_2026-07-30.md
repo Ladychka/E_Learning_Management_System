@@ -56,7 +56,7 @@ Added protected route:
 ### 5. Frontend — Course Detail Browsing (`elms/frontend/src/pages/CourseDetail.tsx`)
 
 Lessons inside course modules are now **clickable links** that route to the lesson player.
-- Added content type icons (▶ Play, 📄 FileText, ❓ HelpCircle) next to each lesson title
+- Added content type icons (▶ Play, FileText, HelpCircle) next to each lesson title
 - Shows "Preview" badges for free lessons
 - Hover state for better UX
 

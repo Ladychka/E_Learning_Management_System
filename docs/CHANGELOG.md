@@ -40,7 +40,7 @@ All notable changes and progress to the ELMS project are documented in this file
   - Searchable Cambodian Fintech Glossary (KHQR, Bakong, NBC, CBC, EMI, AML/CFT) with bilingual terms.
 - **Bilingual Localization & Context in Flutter (`LocaleCubit`)**:
   - Integrated `flutter_localizations` with English and authentic Khmer string dictionaries in `core/localization.dart`.
-  - Persistent language toggle (English 🇺🇸 / ភាសាខ្មែរ 🇰🇭) and low-bandwidth Data Saver toggle in `ProfileScreen`.
+  - Persistent language toggle (English / ភាសាខ្មែរ KM) and low-bandwidth Data Saver toggle in `ProfileScreen`.
   - ShellScaffold bottom navigation bar dynamically reflects authentic Khmer navigation titles.
 - **KHQR Mobile Payment Experience**:
   - Added active 5-minute countdown session timer for KHQR payment view.
@@ -68,7 +68,7 @@ All notable changes and progress to the ELMS project are documented in this file
   - Language switcher in main top navigation with automatic DOM font family switching.
 - **Context & Navigation Chrome**:
   - `ThemeContext.tsx`: Persistent dark mode, language selector, and low-bandwidth data-saver toggle.
-  - Enhanced top bar in `Layout.tsx` with Dark/Light toggle, Language switcher (`🇺🇸 EN / 🇰🇭 ខ្មែរ`), and Data Saver mode.
+  - Enhanced top bar in `Layout.tsx` with Dark/Light toggle, Language switcher (`EN / KM ខ្មែរ`), and Data Saver mode.
 - **Onboarding & Auth Polish**:
   - `OnboardingModal.tsx`: 3-step personalized onboarding dialog (language, fintech experience level, and learning goals).
   - `Login.tsx`: Show/hide password eye toggle, dark mode cards, and one-click demo credentials bar (Admin, Instructor, Student).

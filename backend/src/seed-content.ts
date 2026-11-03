@@ -1,7 +1,7 @@
 import { prisma } from "./lib/prisma";
 
 async function seedContent() {
-  console.log("🌱 Seeding course content...");
+  console.log(" Seeding course content...");
 
   const instructor = await prisma.user.findFirst({ where: { role: "INSTRUCTOR" } });
   const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
@@ -287,7 +287,7 @@ async function seedContent() {
       },
     });
 
-    console.log("✅ Web Development course content seeded");
+    console.log(" Web Development course content seeded");
   }
 
   // ─── Course 2: Stock Trading (add quiz content) ───
@@ -445,7 +445,7 @@ async function seedContent() {
       },
     });
 
-    console.log("✅ Stock Trading course content seeded");
+    console.log(" Stock Trading course content seeded");
   }
 
   // ─── Course 3: Create a brand new Data Science course ───
@@ -603,10 +603,10 @@ async function seedContent() {
       },
     });
 
-    console.log("✅ Data Science course seeded");
+    console.log(" Data Science course seeded");
   }
 
-  console.log("✅ All course content seeded successfully!");
+  console.log(" All course content seeded successfully!");
 }
 
 seedContent()

@@ -25,6 +25,7 @@ import {
   Moon,
   Wifi,
   Sparkles,
+  Languages,
 } from "lucide-react";
 import { useState } from "react";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -213,25 +214,25 @@ export const Layout = () => {
             <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5">
               <button
                 onClick={() => setLanguage("en")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                   language === "en"
                     ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
                 title="Switch to English"
               >
-                🇺🇸 EN
+                <Languages className="h-3.5 w-3.5" /> EN
               </button>
               <button
                 onClick={() => setLanguage("km")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                   language === "km"
                     ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
                 title="ប្តូរទៅភាសាខ្មែរ"
               >
-                🇰🇭 ខ្មែរ
+                <Languages className="h-3.5 w-3.5" /> ខ្មែរ
               </button>
             </div>
 

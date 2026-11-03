@@ -187,4 +187,4 @@ The Flutter app consumes the **same** endpoints as the React web app. Key endpoi
 ---
 
 *Plan Prepared: 2026-07-28*  
-*Status: 📋 Planned — Ready to begin when Sprint 3 APIs are stable*
+*Status: Planned — Ready to begin when Sprint 3 APIs are stable*

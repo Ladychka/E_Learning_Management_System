@@ -11,15 +11,15 @@
 
 | Status | Item |
 |--------|------|
-| ✅ Achieved | Full authentication system with JWT + refresh tokens |
-| ✅ Achieved | Role-based access control (Student / Instructor / Admin) |
-| ✅ Achieved | User management admin panel with search, suspend, reactivate |
-| ✅ Achieved | Course CRUD with ownership checks and publishing workflow |
-| ✅ Achieved | Hierarchical category system |
-| ✅ Achieved | Email verification and password reset flows |
-| ✅ Achieved | Account deactivation with security confirmation |
-| ✅ Achieved | React frontend with auth context, routing, and admin pages |
-| ✅ Achieved | Database schema covering all 6 sprints |
+| Achieved | Full authentication system with JWT + refresh tokens |
+| Achieved | Role-based access control (Student / Instructor / Admin) |
+| Achieved | User management admin panel with search, suspend, reactivate |
+| Achieved | Course CRUD with ownership checks and publishing workflow |
+| Achieved | Hierarchical category system |
+| Achieved | Email verification and password reset flows |
+| Achieved | Account deactivation with security confirmation |
+| Achieved | React frontend with auth context, routing, and admin pages |
+| Achieved | Database schema covering all 6 sprints |
 
 ---
 
@@ -27,21 +27,21 @@
 
 | ID | User Story | Status | Acceptance Criteria Met |
 |----|-----------|--------|------------------------|
-| US-001 | Register | ✅ | User can register with email, password, name. Email verification required. |
-| US-002 | Login | ✅ | User can login with credentials. JWT + refresh token returned. |
-| US-003 | Logout | ✅ | Token revocation on logout. Refresh tokens invalidated. |
-| US-004 | User Management | ✅ | Admin can list, search, filter, suspend, reactivate, delete users. |
-| US-005 | Role Management | ✅ | Three roles enforced via middleware. Route-level protection active. |
-| US-006 | Reset Password | ✅ | Secure token-based reset flow via email. 1-hour expiry. |
-| US-007 | Update Profile | ✅ | Users can update name, bio, phone, address, education, occupation. |
-| US-008 | Email Verification | ✅ | Token sent on registration. Account status transitions after verification. |
-| US-009 | Session Timeout | ✅ | JWT expires in 7 days. Refresh token expires in 30 days. Auto-refresh on frontend. |
-| US-010 | Deactivate Account | ✅ | Self-service deactivation with password confirmation. All sessions revoked. |
-| US-011 | Create Course | ✅ | Instructors/Admins can create courses with metadata, pricing, scheduling. |
-| US-012 | Update Course | ✅ | Course owners or admins can update course details. Slug auto-regenerated. |
-| US-013 | Delete Course | ✅ | Course owners or admins can delete courses. |
-| US-014 | Search Course | ✅ | Full-text search on title, description, and tags. Category and level filters. |
-| US-015 | Course Categories | ✅ | Admin can create, update, delete hierarchical categories. Courses linked to categories. |
+| US-001 | Register | Yes | User can register with email, password, name. Email verification required. |
+| US-002 | Login | Yes | User can login with credentials. JWT + refresh token returned. |
+| US-003 | Logout | Yes | Token revocation on logout. Refresh tokens invalidated. |
+| US-004 | User Management | Yes | Admin can list, search, filter, suspend, reactivate, delete users. |
+| US-005 | Role Management | Yes | Three roles enforced via middleware. Route-level protection active. |
+| US-006 | Reset Password | Yes | Secure token-based reset flow via email. 1-hour expiry. |
+| US-007 | Update Profile | Yes | Users can update name, bio, phone, address, education, occupation. |
+| US-008 | Email Verification | Yes | Token sent on registration. Account status transitions after verification. |
+| US-009 | Session Timeout | Yes | JWT expires in 7 days. Refresh token expires in 30 days. Auto-refresh on frontend. |
+| US-010 | Deactivate Account | Yes | Self-service deactivation with password confirmation. All sessions revoked. |
+| US-011 | Create Course | Yes | Instructors/Admins can create courses with metadata, pricing, scheduling. |
+| US-012 | Update Course | Yes | Course owners or admins can update course details. Slug auto-regenerated. |
+| US-013 | Delete Course | Yes | Course owners or admins can delete courses. |
+| US-014 | Search Course | Yes | Full-text search on title, description, and tags. Category and level filters. |
+| US-015 | Course Categories | Yes | Admin can create, update, delete hierarchical categories. Courses linked to categories. |
 
 ---
 
@@ -115,11 +115,11 @@ Tables defined for future sprints:
 
 | Test Type | Status | Notes |
 |-----------|--------|-------|
-| Manual API Testing | ✅ | All endpoints tested via curl/Postman |
-| Frontend Flow Testing | ✅ | Login → Dashboard → Courses → Profile → Logout |
-| Role Access Testing | ✅ | Verified 403s for unauthorized roles |
-| Validation Testing | ✅ | Zod schemas reject malformed inputs |
-| Seed Data Verification | ✅ | Demo accounts and sample course created correctly |
+| Manual API Testing | Yes | All endpoints tested via curl/Postman |
+| Frontend Flow Testing | Yes | Login → Dashboard → Courses → Profile → Logout |
+| Role Access Testing | Yes | Verified 403s for unauthorized roles |
+| Validation Testing | Yes | Zod schemas reject malformed inputs |
+| Seed Data Verification | Yes | Demo accounts and sample course created correctly |
 
 ---
 
@@ -174,4 +174,4 @@ Tables defined for future sprints:
 ---
 
 *Report Prepared: 2026-07-24*  
-*Sprint 1 Status: ✅ COMPLETE*
+*Sprint 1 Status: COMPLETE*

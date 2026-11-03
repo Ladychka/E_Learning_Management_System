@@ -46,12 +46,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final api = ApiService();
       final res = await api.client.get('/courses');
       setState(() {
-        _diagResult = '✅ Connected! Backend responded: ${res.statusCode}';
+        _diagResult = 'Connected! Backend responded: ${res.statusCode}';
         _testing = false;
       });
     } catch (e) {
       setState(() {
-        _diagResult = '❌ Error: $e\n\nURL tried: ${ApiConstants.baseUrl}';
+        _diagResult = 'Error: $e\n\nURL tried: ${ApiConstants.baseUrl}';
         _testing = false;
       });
     }
@@ -190,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: _diagResult!.startsWith('✅')
+                            color: _diagResult!.startsWith('Connected')
                                 ? Colors.green[50]
                                 : Colors.red[50],
                             borderRadius: BorderRadius.circular(8),
@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             _diagResult!,
                             style: TextStyle(
                               fontSize: 12,
-                              color: _diagResult!.startsWith('✅')
+                              color: _diagResult!.startsWith('Connected')
                                   ? Colors.green[800]
                                   : Colors.red[800],
                             ),

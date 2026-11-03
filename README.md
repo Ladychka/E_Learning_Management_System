@@ -9,7 +9,7 @@ A complete, production-grade **Fintech E-Learning Management System (ELMS)** des
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```
 elms/
@@ -22,7 +22,7 @@ elms/
 
 ---
 
-## ✨ Key Platform Features
+## Key Platform Features
 
 1. **Cambodian Finance Hub (`/finance-tools`)**:
    - Loan / EMI Amortization calculator (reducing balance breakdown).
@@ -44,14 +44,14 @@ elms/
    - Interactive Rubrics builder and criteria-based grading interface.
    - Public Certificate verification view (`/verify/:certificateNumber`) with dynamic QR codes.
 5. **Bilingual Localization & Design System**:
-   - English 🇺🇸 and authentic Khmer 🇰🇭 translations (`Kantumruy Pro` / `Battambang` fonts).
+   - English and authentic Khmer translations (`Kantumruy Pro` / `Battambang` fonts).
    - Theme tokens: Emerald primary (`#10B981`), Navy Slate neutrals (`#0F172A`), Gold badges.
    - System/manual Dark Mode support across Web and Mobile.
    - Low-bandwidth Data Saver toggle for Cambodian mobile connections.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Database & Backend
 ```bash
@@ -80,7 +80,7 @@ flutter run                   # Runs on Android emulator, iOS simulator, or Web
 
 ---
 
-## 🔑 Demo Credentials
+## Demo Credentials
 
 | Role | Email | Password | Primary Capabilities |
 |---|---|---|---|
@@ -90,7 +90,7 @@ flutter run                   # Runs on Android emulator, iOS simulator, or Web
 
 ---
 
-## 🧪 Verification & Automated Tests
+## Verification & Automated Tests
 
 ### Backend Tests (Vitest)
 ```bash
@@ -115,7 +115,7 @@ cd elms/mobile && flutter analyze             # No issues found!
 
 ---
 
-## 📚 Documentation Index
+## Documentation Index
 
 - [Administrator Manual](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/ADMIN_MANUAL.md)
 - [Student & Instructor User Guide](file:///d:/AUB%20Y4%20S1/Financial%20application%20design%20%28Teacher%20Piseth%20%29/FinTech/FinTech/elms/docs/USER_GUIDE.md)

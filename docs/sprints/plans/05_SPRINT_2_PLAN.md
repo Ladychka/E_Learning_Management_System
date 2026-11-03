@@ -169,9 +169,9 @@ model Question {
 
 ## Dependencies
 
-- **Sprint 1 tables must exist** (courses, users, categories) — ✅ Complete
+- **Sprint 1 tables must exist** (courses, users, categories) — Complete
 - **Object storage must be configured** — Required by US-023, US-024
-- **Frontend auth context** — ✅ Complete; no changes needed
+- **Frontend auth context** — Complete; no changes needed
 
 ---
 

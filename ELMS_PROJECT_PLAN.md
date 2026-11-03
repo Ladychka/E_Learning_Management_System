@@ -47,7 +47,7 @@ Fintech e-learning platform — courses teach finance topics via **video lessons
 
 ---
 
-## Phase 0 — Foundation (before Sprint 1) ✅ COMPLETED
+## Phase 0 — Foundation (before Sprint 1) COMPLETED
 
 - [x] Confirm requirements and scope sign-off
 - [x] Finalize tech stack choice — Node.js/Express + React + PostgreSQL + Prisma
@@ -58,7 +58,7 @@ Fintech e-learning platform — courses teach finance topics via **video lessons
 
 ---
 
-## Sprint 1 (Weeks 1–2) ✅ COMPLETED
+## Sprint 1 (Weeks 1–2) COMPLETED
 
 **Goal:** Build the project foundation, authentication, and basic course management.
 

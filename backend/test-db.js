@@ -7,11 +7,11 @@ const client = new Client({
 client.connect()
   .then(() => client.query('SELECT NOW()'))
   .then(res => {
-    console.log('✅ Connected! Server time:', res.rows[0].now);
+    console.log('Connected! Server time:', res.rows[0].now);
     client.end();
   })
   .catch(err => {
-    console.error('❌ Connection failed:', err.message);
+    console.error('Connection failed:', err.message);
     client.end();
     process.exit(1);
   });

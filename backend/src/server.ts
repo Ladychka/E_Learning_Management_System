@@ -3,8 +3,8 @@ import { app } from "./app";
 
 const startServer = () => {
   const server = app.listen(config.port, () => {
-    console.log(`🚀 Server running on http://localhost:${config.port}`);
-    console.log(`📦 Environment: ${config.nodeEnv}`);
+    console.log(`Server running on http://localhost:${config.port}`);
+    console.log(`Environment: ${config.nodeEnv}`);
   });
 
   process.on("SIGTERM", () => {

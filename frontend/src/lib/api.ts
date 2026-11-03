@@ -186,6 +186,7 @@ export const paymentApi = {
     api.post(`/payments/${id}/refund`, { reason }),
   getPaymentHistory: (params?: Record<string, string>) => api.get("/payments/history", { params }),
   getPayment: (id: string) => api.get(`/payments/${id}`),
+  getPaymentStatus: (id: string) => api.get(`/payments/${id}/status`),
   getPaymentQr: (id: string) => api.get(`/payments/${id}/qr`),
   getInvoice: (id: string) => api.get(`/payments/${id}/invoice`),
   validateCoupon: (code: string, courseId?: string) => api.post("/payments/coupons/validate", { code, courseId }),

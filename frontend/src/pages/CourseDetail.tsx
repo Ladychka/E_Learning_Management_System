@@ -6,7 +6,7 @@ import {
   BookOpen, Clock, Users, ArrowLeft, Play, FileText,
   HelpCircle, CreditCard, LogIn, CheckCircle, Loader2,
   Award, Star, ShieldCheck, ChevronDown, ChevronUp,
-  GraduationCap, Sparkles, AlertCircle
+  GraduationCap, Sparkles, AlertCircle, Coins
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -253,7 +253,9 @@ export const CourseDetail = () => {
                       ≈ {priceKhr} KHR (KHQR Bakong, ABA, Wing, ACLEDA)
                     </p>
                     <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 text-xs font-semibold border border-blue-200">
-                      <span>🪙 Or pay in 2 parts:</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Coins className="h-3.5 w-3.5" /> Or pay in 2 parts:
+                      </span>
                       <span className="font-bold">${(priceUsd / 2).toFixed(2)}/month (0% interest)</span>
                     </div>
                   </div>
@@ -429,8 +431,10 @@ export const CourseDetail = () => {
                     </div>
                     <span className="text-xs font-bold text-gray-900">Sophea R. (Credit Analyst, ABA Bank)</span>
                   </div>
-                  <div className="flex text-amber-400">
-                    {"★★★★★"}
+                  <div className="flex gap-0.5 text-amber-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    ))}
                   </div>
                 </div>
                 <p className="text-xs text-gray-600 leading-relaxed">
@@ -446,8 +450,10 @@ export const CourseDetail = () => {
                     </div>
                     <span className="text-xs font-bold text-gray-900">Vireak M. (Fintech Developer)</span>
                   </div>
-                  <div className="flex text-amber-400">
-                    {"★★★★★"}
+                  <div className="flex gap-0.5 text-amber-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    ))}
                   </div>
                 </div>
                 <p className="text-xs text-gray-600 leading-relaxed">
@@ -504,7 +510,9 @@ export const CourseDetail = () => {
                 </h4>
                 <p className="text-xs text-emerald-700 font-medium">Fintech Architect & Educator</p>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                  <span>★ 4.9 Rating</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> 4.9 Rating
+                  </span>
                   <span>•</span>
                   <span>1,420+ Students</span>
                 </div>

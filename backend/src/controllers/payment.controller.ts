@@ -5,6 +5,7 @@ import { logAudit } from "../utils/audit";
 import { config } from "../config";
 import {
   buildPaywayCheckout,
+  checkPaywayTransaction,
   isPaywayConfigured,
   verifyPaywaySignature,
 } from "../lib/payway";
@@ -26,6 +27,11 @@ function generateInvoiceNumber(): string {
 }
 
 const NBC_EXCHANGE_RATE = 4100;
+const PAYMENT_EXPIRY_MS = 5 * 60 * 1000;
+
+function paymentExpiresAt(payment: { createdAt: Date }): Date {
+  return new Date(payment.createdAt.getTime() + PAYMENT_EXPIRY_MS);
+}
 
 /** Converts any supported payment amount into USD for reporting/payouts. */
 function toUsd(amount: number, currency: string): number {
@@ -52,6 +58,13 @@ async function createInstructorPayout(
     select: { instructorId: true },
   });
   if (!course) return;
+
+  // Callback retries must not create duplicate payouts for one payment.
+  const existingPayout = await prisma.instructorPayout.findFirst({
+    where: { notes: { contains: `payment ${paymentId}` } },
+    select: { id: true },
+  });
+  if (existingPayout) return;
 
   // Payouts are always recorded in USD; converting here prevents KHR amounts
   // (e.g. 205,000 KHR) being stored as 205,000 USD.
@@ -137,6 +150,78 @@ async function activateEnrollmentIfFullyPaid(payment: PaymentForEnrollment): Pro
     await createInstructorPayout(payment.courseId, payment.id, requiredAmountUsd, "USD");
   }
   return fullyPaid;
+}
+
+/**
+ * Atomically moves a payment to completed and activates the enrollment. The
+ * conditional update makes callback retries idempotent: only the first caller
+ * can transition the row, so payouts and enrollment activation happen once.
+ */
+async function finalizePaymentCompleted(paymentId: string) {
+  const result = await prisma.payment.updateMany({
+    where: {
+      id: paymentId,
+      status: { notIn: ["completed", "refunded"] },
+    },
+    data: { status: "completed", paidAt: new Date() },
+  });
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { course: true },
+  });
+
+  let enrolled = false;
+  if (payment?.courseId && (result.count > 0 || payment.status === "completed")) {
+    enrolled = await activateEnrollmentIfFullyPaid(payment);
+  }
+
+  return { changed: result.count > 0, enrolled, payment };
+}
+
+async function markPaymentStatus(paymentId: string, status: string) {
+  return prisma.payment.updateMany({
+    where: {
+      id: paymentId,
+      status: { notIn: ["completed", "refunded"] },
+    },
+    data: { status },
+  });
+}
+
+async function checkProviderPaymentStatus(payment: {
+  id: string;
+  status: string;
+  gateway: string;
+  gatewayRef: string | null;
+}) {
+  if (payment.status !== "pending" || !payment.gatewayRef) {
+    return { checked: false, providerStatus: null as string | null };
+  }
+
+  const canCheckWithPayway =
+    ["khqr", "aba_payway", "card"].includes(payment.gateway) &&
+    isPaywayConfigured();
+
+  if (!canCheckWithPayway) {
+    return { checked: false, providerStatus: null as string | null };
+  }
+
+  const result = await checkPaywayTransaction(payment.gatewayRef);
+  if (!result) {
+    return { checked: false, providerStatus: null as string | null };
+  }
+
+  if (result.status === "paid") {
+    await finalizePaymentCompleted(payment.id);
+  } else if (result.status === "failed") {
+    await markPaymentStatus(payment.id, "failed");
+  }
+
+  return {
+    checked: true,
+    providerStatus: result.status,
+  };
 }
 
 async function applyCoupon(
@@ -676,26 +761,26 @@ export const confirmPayment = async (
       throw new AppError("Only an administrator can confirm this payment", 403);
     }
 
-    const updateData: Record<string, unknown> = { status };
-    if (status === "completed") {
-      updateData.paidAt = new Date();
-      if (gatewayRef) {
-        updateData.gatewayRef = gatewayRef;
-      }
+    if (gatewayRef) {
+      await prisma.payment.update({
+        where: { id },
+        data: { gatewayRef },
+      });
     }
 
-    const updated = await prisma.payment.update({
+    if (status === "completed") {
+      await finalizePaymentCompleted(id);
+    } else {
+      await markPaymentStatus(id, status);
+    }
+
+    const updated = await prisma.payment.findUnique({
       where: { id },
-      data: updateData,
       include: {
         user: { select: { firstName: true, lastName: true, email: true } },
         course: { select: { id: true, title: true } },
       },
     });
-
-    if (status === "completed" && payment.courseId) {
-      await activateEnrollmentIfFullyPaid(payment);
-    }
 
     await logAudit({
       userId: req.user?.id,
@@ -766,18 +851,11 @@ export const handleWebhook = async (
     }
 
     const normalizedStatus = status === "success" || status === "completed" ? "completed" : "failed";
-    const updateData: Record<string, unknown> = { status: normalizedStatus };
+
     if (normalizedStatus === "completed") {
-      updateData.paidAt = new Date();
-    }
-
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: updateData,
-    });
-
-    if (normalizedStatus === "completed" && payment.courseId) {
-      await activateEnrollmentIfFullyPaid(payment);
+      await finalizePaymentCompleted(payment.id);
+    } else {
+      await markPaymentStatus(payment.id, "failed");
     }
 
     await logAudit({
@@ -831,7 +909,7 @@ export const handlePaywayCallback = async (
 
     const approved = String(payload.status) === "0";
     if (!approved) {
-      await prisma.payment.update({ where: { id: payment.id }, data: { status: "failed" } });
+      await markPaymentStatus(payment.id, "failed");
       await logAudit({
         action: "PAYWAY_PAYMENT_FAILED",
         entity: "Payment",
@@ -850,7 +928,7 @@ export const handlePaywayCallback = async (
     const tolerance = payment.currency === "KHR" ? 1 : 0.01;
 
     if (!paidAmount || paidAmount + tolerance < expectedAmount) {
-      await prisma.payment.update({ where: { id: payment.id }, data: { status: "failed" } });
+      await markPaymentStatus(payment.id, "failed");
       await logAudit({
         action: "PAYWAY_AMOUNT_MISMATCH",
         entity: "Payment",
@@ -862,12 +940,7 @@ export const handlePaywayCallback = async (
       return res.json({ success: true, message: "Amount mismatch" });
     }
 
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: "completed", paidAt: new Date() },
-    });
-
-    const enrolled = await activateEnrollmentIfFullyPaid(payment);
+    const finalized = await finalizePaymentCompleted(payment.id);
 
     await logAudit({
       action: "PAYWAY_PAYMENT_COMPLETED",
@@ -877,7 +950,7 @@ export const handlePaywayCallback = async (
         tran_id: tranId,
         paidAmount,
         currency: payment.currency,
-        enrolled,
+        enrolled: finalized.enrolled,
         apv: payload.apv,
         payment_type: payload.payment_type,
       },
@@ -885,7 +958,11 @@ export const handlePaywayCallback = async (
       userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, message: "Payment confirmed", enrolled });
+    res.json({
+      success: true,
+      message: "Payment confirmed",
+      enrolled: finalized.enrolled,
+    });
   } catch (error) {
     return next(error);
   }
@@ -966,6 +1043,81 @@ export const getPaymentById = async (
     }
 
     res.json({ success: true, data: payment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPaymentStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    let payment = await prisma.payment.findUnique({
+      where: { id },
+      include: {
+        course: { select: { id: true, title: true, instructorId: true } },
+      },
+    });
+
+    if (!payment) throw new AppError("Payment not found", 404);
+    if (req.user?.role === "STUDENT" && payment.userId !== req.user.id) {
+      throw new AppError("Not authorized to view this payment", 403);
+    }
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      payment.course?.instructorId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to view this payment", 403);
+    }
+
+    const providerCheck = await checkProviderPaymentStatus(payment);
+
+    payment = await prisma.payment.findUnique({
+      where: { id },
+      include: {
+        course: { select: { id: true, title: true, instructorId: true } },
+      },
+    });
+    if (!payment) throw new AppError("Payment not found", 404);
+
+    const expiresAt = paymentExpiresAt(payment);
+    if (payment.status === "pending" && Date.now() > expiresAt.getTime()) {
+      const expired = await prisma.payment.updateMany({
+        where: { id, status: "pending" },
+        data: { status: "expired" },
+      });
+      if (expired.count > 0) {
+        payment = await prisma.payment.findUnique({
+          where: { id },
+          include: {
+            course: { select: { id: true, title: true, instructorId: true } },
+          },
+        });
+      }
+    }
+    if (!payment) throw new AppError("Payment not found", 404);
+
+    res.json({
+      success: true,
+      data: {
+        paymentId: payment.id,
+        status: payment.status,
+        amount: Number(payment.amount),
+        currency: payment.currency,
+        gateway: payment.gateway,
+        gatewayRef: payment.gatewayRef,
+        course: payment.course,
+        createdAt: payment.createdAt,
+        expiresAt,
+        providerChecked: providerCheck.checked,
+        providerStatus: providerCheck.providerStatus,
+        pollIntervalSeconds: 3,
+      },
+    });
   } catch (error) {
     next(error);
   }

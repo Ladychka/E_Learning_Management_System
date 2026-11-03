@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
   Loader2,
+  Coins,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { paymentApi } from "@/lib/api";
@@ -332,7 +333,9 @@ export function Invoice() {
           <div className="mx-6 sm:mx-8 mt-4 p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-blue-900 space-y-2">
             <div className="flex items-center justify-between font-bold">
               <span className="flex items-center gap-1.5 text-blue-900">
-                <span>🪙 Part Payment Schedule</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Coins className="h-3.5 w-3.5" /> Part Payment Schedule
+                </span>
                 <span className="px-2 py-0.5 rounded-full bg-blue-200/80 text-blue-800 text-[10px]">
                   Installment {invoice.installmentSchedule.installmentIndex} of {invoice.installmentSchedule.totalInstallments}
                 </span>

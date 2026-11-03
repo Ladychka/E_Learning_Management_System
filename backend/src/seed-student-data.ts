@@ -1,7 +1,7 @@
 import { prisma } from "./lib/prisma";
 
 async function seedStudentData() {
-  console.log("🌱 Creating realistic student learning data...");
+  console.log(" Creating realistic student learning data...");
 
   const student = await prisma.user.findUnique({ where: { email: "student@elms.edu" } });
   if (!student) {
@@ -32,7 +32,7 @@ async function seedStudentData() {
       },
     });
     enrollments.push({ ...enrollment, courseTitle: course.title });
-    console.log(`✅ Enrolled in: ${course.title}`);
+    console.log(` Enrolled in: ${course.title}`);
   }
 
   // ─── 2. QUIZ ATTEMPTS ───
@@ -79,7 +79,7 @@ async function seedStudentData() {
         },
       });
       quizAttempts.push({ ...attempt, quizTitle: quiz.title });
-      console.log(`✅ Quiz attempt: ${quiz.title} — ${score}%`);
+      console.log(` Quiz attempt: ${quiz.title} — ${score}%`);
     }
   }
 
@@ -123,7 +123,7 @@ async function seedStudentData() {
         publishedAt: new Date(),
       },
     });
-    console.log(`✅ Grade: ${course.title} — ${letterGrade} (${percentage}%)`);
+    console.log(` Grade: ${course.title} — ${letterGrade} (${percentage}%)`);
   }
 
   // ─── 4. ASSIGNMENTS & SUBMISSIONS ───
@@ -169,7 +169,7 @@ async function seedStudentData() {
         publishedAt: new Date(),
       },
     });
-    console.log(`✅ Assignment submitted: ${assignment.title} — ${letterGrade}`);
+    console.log(` Assignment submitted: ${assignment.title} — ${letterGrade}`);
   }
 
   // ─── 5. PAYMENTS ───
@@ -187,7 +187,7 @@ async function seedStudentData() {
         paidAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
       },
     });
-    console.log(`✅ Payment: ${paidCourse.title} — $${paidCourse.price}`);
+    console.log(` Payment: ${paidCourse.title} — $${paidCourse.price}`);
   }
 
   // ─── 6. NOTIFICATIONS ───
@@ -209,7 +209,7 @@ async function seedStudentData() {
         isRead: Math.random() > 0.5,
       },
     });
-    console.log(`✅ Notification: ${notif.title}`);
+    console.log(` Notification: ${notif.title}`);
   }
 
   // ─── 7. CERTIFICATES ───
@@ -225,7 +225,7 @@ async function seedStudentData() {
         issuedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       },
     });
-    console.log(`✅ Certificate issued for: ${completedCourse.title}`);
+    console.log(` Certificate issued for: ${completedCourse.title}`);
   }
 
   // ─── 8. COMMENTS ───
@@ -243,16 +243,16 @@ async function seedStudentData() {
         content: `Great lesson on ${lesson.title}! The explanations were very clear and helpful.`,
       },
     });
-    console.log(`✅ Comment on: ${lesson.title}`);
+    console.log(` Comment on: ${lesson.title}`);
   }
 
-  console.log("\n🎉 All student data seeded successfully!");
-  console.log("\n📊 Summary:");
+  console.log("\n All student data seeded successfully!");
+  console.log("\n Summary:");
   console.log(`   • Enrollments: ${courses.length}`);
   console.log(`   • Quiz Attempts: ${quizAttempts.length}`);
   console.log(`   • Assignments Submitted: ${assignments.length}`);
   console.log(`   • Notifications: ${notificationTypes.length}`);
-  console.log("\n👉 Log in as student@elms.edu / Student123!");
+  console.log("\n Log in as student@elms.edu / Student123!");
   console.log("   Dashboard: http://localhost:5175/");
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -53,6 +53,7 @@ export function PaymentQR() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(300);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
   const loadQr = async () => {
@@ -69,48 +70,87 @@ export function PaymentQR() {
     }
   };
 
+  const loadStatus = useCallback(async () => {
+    if (!paymentId) return;
+    const res = await paymentApi.getPaymentStatus(paymentId);
+    const statusData = res.data.data as {
+      status: string;
+      amount?: number;
+      currency?: string;
+      gatewayRef?: string | null;
+      expiresAt?: string | null;
+    };
+
+    setData((previous) =>
+      previous
+        ? {
+            ...previous,
+            status: statusData.status,
+            amount: Number(statusData.amount ?? previous.amount),
+            currency: statusData.currency ?? previous.currency,
+            gatewayRef: statusData.gatewayRef ?? previous.gatewayRef,
+          }
+        : previous
+    );
+    if (statusData.expiresAt) setExpiresAt(statusData.expiresAt);
+  }, [paymentId]);
+
   useEffect(() => {
     loadQr();
-  }, [paymentId]);
+    loadStatus().catch(() => {
+      // Polling/manual checks show their own feedback.
+    });
+  }, [paymentId, loadStatus]);
 
   const isTerminal =
     data?.status === "completed" ||
     data?.status === "failed" ||
     data?.status === "refunded";
-  const isExpired = secondsLeft <= 0 && !isTerminal;
+  const isExpired =
+    data?.status === "expired" || (secondsLeft <= 0 && !isTerminal);
 
   useEffect(() => {
     if (!paymentId || isTerminal || isExpired) return;
-    const interval = setInterval(loadQr, 5000);
+    const interval = setInterval(() => {
+      loadStatus().catch(() => {
+        // Keep polling through transient network errors.
+      });
+    }, 3000);
     return () => clearInterval(interval);
-  }, [paymentId, isTerminal, isExpired]);
+  }, [paymentId, isTerminal, isExpired, loadStatus]);
 
   useEffect(() => {
-    if (isTerminal) return;
+    if (isTerminal || isExpired) return;
+
+    if (expiresAt) {
+      const updateCountdown = () =>
+        setSecondsLeft(
+          Math.max(
+            0,
+            Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
+          )
+        );
+      updateCountdown();
+      const timer = setInterval(updateCountdown, 1000);
+      return () => clearInterval(timer);
+    }
+
     const timer = setInterval(() => {
-      setSecondsLeft((previous) => {
-        if (previous <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return previous - 1;
-      });
+      setSecondsLeft((previous) => Math.max(0, previous - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [isTerminal]);
+  }, [expiresAt, isTerminal, isExpired]);
 
-  const handleSandboxConfirm = async () => {
+  const handleManualCheck = async () => {
     if (!paymentId || confirming) return;
     setConfirming(true);
     try {
-      await paymentApi.confirmPayment(paymentId, {
-        status: "completed",
-        gatewayRef: `SANDBOX-WEB-${Date.now()}`,
-      });
-      toast.success("Payment confirmed");
-      await loadQr();
+      await loadStatus();
+      toast.success("Payment status refreshed");
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Could not confirm payment");
+      toast.error(
+        err?.response?.data?.message || "Could not check payment status"
+      );
     } finally {
       setConfirming(false);
     }
@@ -336,30 +376,18 @@ export function PaymentQR() {
                   </ol>
                 </div>
 
-                {(import.meta.env.DEV ||
-                  import.meta.env.VITE_ALLOW_SANDBOX_CONFIRM === "true") && (
-                  <button
-                    type="button"
-                    onClick={handleSandboxConfirm}
-                    disabled={confirming}
-                    className="btn-primary inline-flex w-full items-center justify-center gap-1.5 py-2.5 text-xs font-semibold"
-                  >
-                    {confirming ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <CheckCircle className="h-3.5 w-3.5" />
-                    )}
-                    {confirming ? "Confirming..." : "I've paid / Simulate sandbox payment"}
-                  </button>
-                )}
-
                 <button
                   type="button"
-                  onClick={loadQr}
-                  className="btn-secondary inline-flex w-full items-center justify-center gap-1.5 py-2.5 text-xs font-semibold"
+                  onClick={handleManualCheck}
+                  disabled={confirming}
+                  className="btn-primary inline-flex w-full items-center justify-center gap-1.5 py-2.5 text-xs font-semibold"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Check payment status
+                  {confirming ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  )}
+                  {confirming ? "Checking status..." : "I've paid / Check status"}
                 </button>
               </div>
             </div>

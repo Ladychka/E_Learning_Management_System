@@ -14,19 +14,19 @@ Sprint 5 has 20 user stories. For a realistic 2-week implementation window, we w
 
 | US | Story | Status | Approach |
 |----|-------|--------|----------|
-| US-062 | Comments on Lessons | 🆕 New | Threaded comments under each lesson, with author info and timestamps |
-| US-064 | Announcements | 🆕 New | Admin/instructor posts announcements (course-specific or global) |
-| US-065 | Notifications (frontend) | 🔄 Partial | Backend exists (`notification.controller.ts`). Build the bell icon + dropdown + polling |
-| US-068 | Q&A Section | 🆕 New | Structured Q&A on lessons (question/answer format, marked as answered) |
+| US-062 | Comments on Lessons | New | Threaded comments under each lesson, with author info and timestamps |
+| US-064 | Announcements | New | Admin/instructor posts announcements (course-specific or global) |
+| US-065 | Notifications (frontend) | In progress Partial | Backend exists (`notification.controller.ts`). Build the bell icon + dropdown + polling |
+| US-068 | Q&A Section | New | Structured Q&A on lessons (question/answer format, marked as answered) |
 
 ### Analytics Dashboard
 
 | US | Story | Status | Approach |
 |----|-------|--------|----------|
-| US-081 | Student Progress Report | 🆕 New | Compute enrollment progress, completion %, time spent per course |
-| US-084 | Revenue Report | 🆕 New | Aggregate payment data by course, gateway, date range |
-| US-085 | Enrollment Analytics | 🆕 New | Enrollment trends, completion rates, drop-off points |
-| US-088 | Admin Dashboard | 🆕 New | Replace placeholder Dashboard with real stats widgets |
+| US-081 | Student Progress Report | New | Compute enrollment progress, completion %, time spent per course |
+| US-084 | Revenue Report | New | Aggregate payment data by course, gateway, date range |
+| US-085 | Enrollment Analytics | New | Enrollment trends, completion rates, drop-off points |
+| US-088 | Admin Dashboard | New | Replace placeholder Dashboard with real stats widgets |
 
 **Deferred to later:** Discussion Forum (US-061), Direct Messaging (US-063), Live Chat (US-066), Video Conferencing (US-067), Email Notifications (US-069), Calendar (US-070), Instructor Performance (US-083), Quiz/Assignment Analytics (US-086), Engagement Analytics (US-087), Attendance Report (US-089), Certificate Issuance Report (US-090).
 

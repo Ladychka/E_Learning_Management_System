@@ -80,10 +80,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
       try {
-        final res = await _api.get('/payments/$paymentId');
+        final res = await _api.get('/payments/$paymentId/status');
         if (!mounted) return;
         final data = res.data['data'] as Map<String, dynamic>;
         final status = (data['status'] as String? ?? '').toLowerCase();
+
+        final expiresAtRaw = data['expiresAt'] as String?;
+        final expiresAt = expiresAtRaw != null
+            ? DateTime.tryParse(expiresAtRaw)
+            : null;
+        if (expiresAt != null && mounted) {
+          final remaining = expiresAt.difference(DateTime.now()).inSeconds;
+          if (remaining >= 0 && remaining <= 300) {
+            setState(() => _secondsRemaining = remaining);
+          }
+        }
 
         if (status == 'completed' || status == 'paid' || status == 'success') {
           final amount =
@@ -101,13 +112,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               gateway: data['gateway'] as String? ?? 'khqr',
             );
           });
-        } else if (status == 'failed' || status == 'refunded') {
+        } else if (status == 'failed' ||
+            status == 'refunded' ||
+            status == 'expired') {
           timer.cancel();
           _countdownTimer?.cancel();
           if (!mounted) return;
           setState(() {
             _checkoutResult = null;
-            _error = 'Payment $status. Please try again.';
+            _error = status == 'expired'
+                ? 'Payment session expired. Please generate a new QR and try again.'
+                : 'Payment $status. Please try again.';
           });
         }
       } catch (_) {}
@@ -608,7 +623,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   : const Icon(Icons.bolt, size: 18),
               label: Text(_simulating
                   ? 'Confirming with NBC Sandbox...'
-                  : '⚡ Simulate Success (Sandbox Demo)'),
+                  : 'Simulate Success (Sandbox Demo)'),
             ),
           ),
           const SizedBox(height: 8),

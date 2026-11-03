@@ -46,18 +46,18 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 | Priority | Task | Owner | Est. Time |
 |----------|------|-------|-----------|
-| 🔴 High | **Module CRUD API** — `POST/GET/PATCH/DELETE /courses/:id/modules` | Backend | 4h |
-| 🔴 High | **Lesson CRUD API** — Content types: video, pdf, text, quiz | Backend | 6h |
-| 🔴 High | **File Upload Endpoint** — Multer + S3/MinIO integration | Backend | 8h |
-| 🟡 Medium | **Video Streaming** — HTTP range request support | Backend | 4h |
-| 🟡 Medium | **Quiz Structure Tables** — Questions, options, correct answers | Backend | 6h |
-| 🟡 Medium | **Content Reordering** — Bulk update sortOrder API | Backend | 4h |
-| 🟡 Medium | **Drip Content Scheduler** — Calculate availability from enrollment date | Backend | 6h |
-| 🔴 High | **Module/Lesson Builder UI** — Nested tree view in React | Frontend | 8h |
-| 🟡 Medium | **Drag-and-Drop Reordering** — react-beautiful-dnd or dnd-kit | Frontend | 6h |
-| 🟡 Medium | **Video Upload Component** — Progress bar, preview | Frontend | 6h |
-| 🟡 Medium | **PDF Viewer** — Inline display or download | Frontend | 4h |
-| 🟢 Low | **Course Settings Page** — Thumbnail, pricing, schedule, prerequisites | Frontend | 6h |
+| High High | **Module CRUD API** — `POST/GET/PATCH/DELETE /courses/:id/modules` | Backend | 4h |
+| High High | **Lesson CRUD API** — Content types: video, pdf, text, quiz | Backend | 6h |
+| High High | **File Upload Endpoint** — Multer + S3/MinIO integration | Backend | 8h |
+| Medium Medium | **Video Streaming** — HTTP range request support | Backend | 4h |
+| Medium Medium | **Quiz Structure Tables** — Questions, options, correct answers | Backend | 6h |
+| Medium Medium | **Content Reordering** — Bulk update sortOrder API | Backend | 4h |
+| Medium Medium | **Drip Content Scheduler** — Calculate availability from enrollment date | Backend | 6h |
+| High High | **Module/Lesson Builder UI** — Nested tree view in React | Frontend | 8h |
+| Medium Medium | **Drag-and-Drop Reordering** — react-beautiful-dnd or dnd-kit | Frontend | 6h |
+| Medium Medium | **Video Upload Component** — Progress bar, preview | Frontend | 6h |
+| Medium Medium | **PDF Viewer** — Inline display or download | Frontend | 4h |
+| Low Low | **Course Settings Page** — Thumbnail, pricing, schedule, prerequisites | Frontend | 6h |
 
 ### Sprint 2 User Stories to Implement
 
@@ -88,7 +88,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 ## Immediate Action Checklist (Next 30 Minutes)
 
 - [ ] Open browser F12 Console, try login, screenshot the error
-- [ ] Verify backend terminal shows `🚀 Server running on http://localhost:5000`
+- [ ] Verify backend terminal shows `Server running on http://localhost:5000`
 - [ ] Verify `backend/.env` has `FRONTEND_URL=http://localhost:5173` (no quotes, no trailing slash)
 - [ ] Restart both backend (`npm run dev`) and frontend (`npm run dev`) after any `.env` change
 - [ ] Confirm login works → proceed to Sprint 2
@@ -98,10 +98,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 ## Definition of Ready for Sprint 2
 
 Before starting Sprint 2 coding, confirm:
-1. ✅ Sprint 1 login works end-to-end (frontend → backend → database)
-2. ✅ All 3 demo accounts can log in successfully
-3. ✅ Admin can access `/admin/users`, `/admin/courses`, `/admin/categories`
-4. ✅ Instructor can create a course via frontend
+1. Yes Sprint 1 login works end-to-end (frontend → backend → database)
+2. Yes All 3 demo accounts can log in successfully
+3. Yes Admin can access `/admin/users`, `/admin/courses`, `/admin/categories`
+4. Yes Instructor can create a course via frontend
 
 ---
 

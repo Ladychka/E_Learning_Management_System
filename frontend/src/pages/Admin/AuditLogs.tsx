@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auditApi } from "../../lib/api";
-import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 
 interface AuditLog {
   id: string;
@@ -206,8 +206,9 @@ export const AuditLogs: React.FC = () => {
               <button
                 onClick={() => setSelectedLog(null)}
                 className="text-gray-400 hover:text-gray-600 text-sm font-semibold"
+                aria-label="Close audit entry"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-4 text-xs">

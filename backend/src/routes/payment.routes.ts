@@ -8,6 +8,7 @@ import {
   handleWebhook,
   getPaymentHistory,
   getPaymentById,
+  getPaymentStatus,
   getPaymentQr,
   refundPayment,
   generateInvoice,
@@ -58,6 +59,7 @@ paymentRouter.delete("/subscriptions/:id", authenticate, authorize("ADMIN"), del
 
 // ─── Single payment routes ───
 paymentRouter.post("/:id/confirm", authenticate, validate(confirmPaymentSchema), confirmPayment);
+paymentRouter.get("/:id/status", authenticate, getPaymentStatus);
 paymentRouter.get("/:id/qr", authenticate, getPaymentQr);
 paymentRouter.get("/:id/invoice", authenticate, generateInvoice);
 paymentRouter.post("/:id/refund", authenticate, authorize("ADMIN"), validate(refundSchema), refundPayment);

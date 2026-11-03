@@ -2,7 +2,7 @@
 
 **Sprint Duration:** 2026-08-22 to 2026-09-04  
 **Report Date:** 2026-09-05  
-**Status:** ✅ Completed  
+**Status:** Completed  
 **Scrum Master:** [Name]  
 **Product Owner:** [Name]  
 
@@ -20,31 +20,31 @@
 
 | ID | User Story | Status | Acceptance Criteria Met |
 |----|-----------|--------|------------------------|
-| US-051 | Manual Grading | ✅ | Instructors can assign points, max points, letter grade, pass/fail, and feedback |
-| US-052 | Gradebook | ✅ | Paginated grade list with course/student filters, CSV export |
-| US-053 | Grade Weighting | ⬜ | Not implemented — future enhancement |
-| US-054 | Rubrics | ⬜ | Not implemented — future enhancement |
-| US-055 | Feedback Comments | ✅ | Grades include instructor feedback visible to students after publish |
-| US-056 | Grade Export | ✅ | Admins/instructors can export gradebook as CSV |
-| US-057 | Grade Appeal | ✅ | Students can file appeals; instructors respond approve/reject |
-| US-058 | Pass/Fail Status | ✅ | Auto-calculated from percentage; manually overridable |
-| US-059 | GPA Calculation | ✅ | 4.0-scale GPA computed per course from average percentage |
-| US-060 | Grade Notifications | ⬜ | Pending — requires email/notification module (Sprint 5) |
+| US-051 | Manual Grading | Yes | Instructors can assign points, max points, letter grade, pass/fail, and feedback |
+| US-052 | Gradebook | Yes | Paginated grade list with course/student filters, CSV export |
+| US-053 | Grade Weighting | | Not implemented — future enhancement |
+| US-054 | Rubrics | | Not implemented — future enhancement |
+| US-055 | Feedback Comments | Yes | Grades include instructor feedback visible to students after publish |
+| US-056 | Grade Export | Yes | Admins/instructors can export gradebook as CSV |
+| US-057 | Grade Appeal | Yes | Students can file appeals; instructors respond approve/reject |
+| US-058 | Pass/Fail Status | Yes | Auto-calculated from percentage; manually overridable |
+| US-059 | GPA Calculation | Yes | 4.0-scale GPA computed per course from average percentage |
+| US-060 | Grade Notifications | | Pending — requires email/notification module (Sprint 5) |
 
 ### Digital Payments (US-071 to US-080)
 
 | ID | User Story | Status | Acceptance Criteria Met |
 |----|-----------|--------|------------------------|
-| US-071 | Course Purchase | ✅ | Students can purchase courses via backend checkout |
-| US-072 | KHQR Payment | ✅ | Sandbox QR code generated for KHQR gateway |
-| US-073 | ABA PayWay | ✅ | Sandbox payment URL generated for ABA PayWay |
-| US-074 | Bakong Payment | ✅ | Sandbox deeplink and QR generated for Bakong |
-| US-075 | Subscription Plans | ✅ | CRUD for subscription plans with duration and features |
-| US-076 | Coupon/Discount Codes | ✅ | Percentage/fixed coupons with usage limits, expiry, course restrictions |
-| US-077 | Invoice Generation | ✅ | JSON invoice generated with invoice number, line items, and totals |
-| US-078 | Refund Processing | ✅ | Refunds update payment status and auto-unenroll student |
-| US-079 | Payment History | ✅ | Paginated payment history with filters and status badges |
-| US-080 | Instructor Revenue Sharing | ✅ | Auto-creates payout records (default 70% to instructor) |
+| US-071 | Course Purchase | Yes | Students can purchase courses via backend checkout |
+| US-072 | KHQR Payment | Yes | Sandbox QR code generated for KHQR gateway |
+| US-073 | ABA PayWay | Yes | Sandbox payment URL generated for ABA PayWay |
+| US-074 | Bakong Payment | Yes | Sandbox deeplink and QR generated for Bakong |
+| US-075 | Subscription Plans | Yes | CRUD for subscription plans with duration and features |
+| US-076 | Coupon/Discount Codes | Yes | Percentage/fixed coupons with usage limits, expiry, course restrictions |
+| US-077 | Invoice Generation | Yes | JSON invoice generated with invoice number, line items, and totals |
+| US-078 | Refund Processing | Yes | Refunds update payment status and auto-unenroll student |
+| US-079 | Payment History | Yes | Paginated payment history with filters and status badges |
+| US-080 | Instructor Revenue Sharing | Yes | Auto-creates payout records (default 70% to instructor) |
 
 ---
 
@@ -121,18 +121,18 @@
 | Coupon Logic | [ ] | [ ] | [%] |
 | GPA Calculation | [ ] | [ ] | [%] |
 
-> ⏳ **Action Item:** Fill in after running test suite.
+> Pending **Action Item:** Fill in after running test suite.
 
 ### Integration Tests
 
 | Scenario | Status | Notes |
 |----------|--------|-------|
-| Student enrolls → pays → auto-enrolled | ⬜ | Run manually |
-| Refund → student unenrolled | ⬜ | Run manually |
-| Webhook confirms payment | ⬜ | Sandbox only |
-| Grade published → student sees | ⬜ | Run manually |
-| Appeal filed → instructor responds | ⬜ | Run manually |
-| CSV export matches grade data | ⬜ | Run manually |
+| Student enrolls → pays → auto-enrolled | | Run manually |
+| Refund → student unenrolled | | Run manually |
+| Webhook confirms payment | | Sandbox only |
+| Grade published → student sees | | Run manually |
+| Appeal filed → instructor responds | | Run manually |
+| CSV export matches grade data | | Run manually |
 
 ### Manual Test Checklist
 

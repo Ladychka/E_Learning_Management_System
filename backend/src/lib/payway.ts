@@ -158,6 +158,92 @@ export function buildPaywayCheckout(args: PaywayFieldArgs): PaywayCheckoutPayloa
  * Fields are sorted by key, values concatenated, then HMAC-SHA512 with the
  * merchant API secret and base64 encoded.
  */
+export type PaywayCheckStatus = "paid" | "pending" | "failed" | "unknown";
+
+export interface PaywayCheckResult {
+  status: PaywayCheckStatus;
+  raw: unknown;
+}
+
+/**
+ * Queries ABA PayWay's server-to-server Check Transaction API. This is the
+ * authoritative source for a PayWay transaction; it must never be based on a
+ * client-supplied "paid" flag.
+ */
+export async function checkPaywayTransaction(
+  tranId: string
+): Promise<PaywayCheckResult | null> {
+  if (!isPaywayConfigured() || !tranId) return null;
+
+  const baseUrl = config.payments.abaPaywayBaseUrl.replace(/\/+$/, "");
+  const req_time = formatReqTime();
+  const merchant_id = config.payments.abaMerchantId;
+  const hash = crypto
+    .createHmac("sha512", config.payments.abaPaywayApiKey)
+    .update(`${req_time}${merchant_id}${tranId}`, "utf8")
+    .digest("base64");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/payment-gateway/v1/payments/check-transaction`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          req_time,
+          merchant_id,
+          tran_id: tranId,
+          hash,
+        }),
+        signal: controller.signal,
+      }
+    );
+
+    if (!response.ok) return null;
+    const payload = (await response.json()) as Record<string, unknown>;
+
+    const root = payload as any;
+    const rawStatus = String(
+      root?.data?.status ??
+        root?.data?.payment_status ??
+        root?.data?.transaction_status ??
+        root?.payment_status ??
+        root?.result ??
+        ""
+    ).toLowerCase();
+
+    if (["approved", "success", "completed", "paid"].includes(rawStatus)) {
+      return { status: "paid", raw: payload };
+    }
+    if (
+      ["failed", "declined", "rejected", "error", "cancelled", "canceled"].includes(
+        rawStatus
+      )
+    ) {
+      return { status: "failed", raw: payload };
+    }
+    if (["pending", "processing", "in_progress"].includes(rawStatus)) {
+      return { status: "pending", raw: payload };
+    }
+
+    const apiCode = String(
+      root?.status?.code ?? root?.status?.status ?? root?.status ?? ""
+    ).toLowerCase();
+    if (apiCode === "0" || apiCode === "00" || apiCode === "success") {
+      return { status: "pending", raw: payload };
+    }
+
+    return { status: "unknown", raw: payload };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export function verifyPaywaySignature(
   payload: Record<string, unknown>,
   receivedSignature: string

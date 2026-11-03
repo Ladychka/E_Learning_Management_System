@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { getApiErrorMessage } from "../api/client";
@@ -478,9 +479,16 @@ export function LessonViewerScreen({ navigation, route }: Props) {
 
           {lesson.isCompleted ? (
             <View testID="lesson-completed-status" style={styles.completedBox}>
-              <Text style={styles.completedBoxText}>
-                ✓ This lesson is complete
-              </Text>
+              <View style={styles.completedRow}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color="#047857"
+                />
+                <Text style={styles.completedBoxText}>
+                  This lesson is complete
+                </Text>
+              </View>
             </View>
           ) : (
             <Pressable
@@ -757,6 +765,7 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: "center",
   },
+  completedRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   completedBoxText: { color: "#047857", fontSize: 13, fontWeight: "800" },
   primaryButton: {
     marginTop: 14,

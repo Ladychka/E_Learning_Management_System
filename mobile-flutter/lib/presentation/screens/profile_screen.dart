@@ -117,8 +117,8 @@ class ProfileScreen extends StatelessWidget {
                       title: const Text('Language / ភាសា'),
                       subtitle: Text(
                         context.watch<LocaleCubit>().state.locale.languageCode == 'km'
-                            ? '🇰🇭 ភាសាខ្មែរ (Khmer)'
-                            : '🇺🇸 English (US)',
+                            ? 'ភាសាខ្មែរ (Khmer)'
+                            : 'English (US)',
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       trailing: const Icon(Icons.chevron_right),
@@ -195,7 +195,7 @@ class ProfileScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+              leading: const Icon(Icons.language),
               title: const Text('English (US)'),
               onTap: () {
                 context.read<LocaleCubit>().setLocale(const Locale('en'));
@@ -204,7 +204,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const Divider(height: 1),
             ListTile(
-              leading: const Text('🇰🇭', style: TextStyle(fontSize: 24)),
+              leading: const Icon(Icons.language),
               title: const Text('ភាសាខ្មែរ (Khmer)'),
               onTap: () {
                 context.read<LocaleCubit>().setLocale(const Locale('km'));
