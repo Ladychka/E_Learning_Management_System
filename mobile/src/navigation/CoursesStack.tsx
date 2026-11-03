@@ -7,6 +7,7 @@ import { CourseCatalogScreen } from "../screens/CourseCatalogScreen";
 import { CourseContentScreen } from "../screens/CourseContentScreen";
 import { CourseDetailScreen } from "../screens/CourseDetailScreen";
 import { LessonViewerScreen } from "../screens/LessonViewerScreen";
+import { PaymentDetailScreen } from "../screens/PaymentDetailScreen";
 import { QuizHistoryScreen } from "../screens/QuizHistoryScreen";
 import { QuizListScreen } from "../screens/QuizListScreen";
 import { QuizResultScreen } from "../screens/QuizResultScreen";
@@ -35,6 +36,7 @@ export function CoursesStack() {
       <Stack.Screen name="AssignmentDetail" component={AssignmentDetailScreen} />
       <Stack.Screen name="AssignmentSubmit" component={AssignmentSubmitScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
+      <Stack.Screen name="PaymentDetail" component={PaymentDetailScreen} />
     </Stack.Navigator>
   );
 }

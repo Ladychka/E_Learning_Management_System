@@ -40,3 +40,29 @@ export async function getMeRequest() {
 export async function logoutRequest(refreshToken: string | null) {
   await apiClient.post("/auth/logout", { refreshToken });
 }
+
+export type UpdateProfilePayload = {
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  phone?: string;
+  address?: string;
+  education?: string;
+  occupation?: string;
+};
+
+export async function updateProfileRequest(payload: UpdateProfilePayload) {
+  const response = await apiClient.patch("/auth/profile", payload);
+  return response.data.data as AuthUser;
+}
+
+export async function changePasswordRequest(
+  currentPassword: string,
+  newPassword: string
+) {
+  const response = await apiClient.post("/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+  return response.data as { success: boolean; message: string };
+}

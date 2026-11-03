@@ -21,12 +21,24 @@ export type CoursesStackParamList = {
     gateway?: string;
     expiresInSeconds?: number;
   };
+  PaymentDetail: { paymentId: string; title?: string };
+};
+
+export type HomeStackParamList = {
+  Home: undefined;
+  Notifications: undefined;
+};
+
+export type ProfileStackParamList = {
+  ProfileHome: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
 };
 
 export type MainTabParamList = {
-  Home: undefined;
+  Home: NavigatorScreenParams<HomeStackParamList> | undefined;
   Browse: NavigatorScreenParams<CoursesStackParamList> | undefined;
   "My Courses": undefined;
   Grades: undefined;
-  Profile: undefined;
+  Profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };

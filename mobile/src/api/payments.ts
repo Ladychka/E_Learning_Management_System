@@ -88,6 +88,20 @@ export async function createCourseCheckout(
   return response.data.data as CheckoutResponse;
 }
 
+export type PaymentDetail = PaymentRecord & {
+  course?: { id: string; title: string; price?: string | number | null } | null;
+  user?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
+};
+
+export async function getPayment(paymentId: string) {
+  const response = await apiClient.get(`/payments/${paymentId}`);
+  return response.data.data as PaymentDetail;
+}
+
 export async function getPaymentQr(paymentId: string) {
   const response = await apiClient.get(`/payments/${paymentId}/qr`);
   return response.data.data as PaymentQr;
