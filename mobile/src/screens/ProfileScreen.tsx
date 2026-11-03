@@ -119,6 +119,22 @@ export function ProfileScreen({ navigation }: Props) {
         </Pressable>
 
         <Pressable
+          testID="payment-history-button"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate("PaymentHistory")}
+          style={({ pressed }) => [
+            styles.menuRow,
+            pressed && styles.menuRowPressed,
+          ]}
+        >
+          <View style={styles.menuIcon}>
+            <Ionicons name="receipt-outline" size={18} color="#0f766e" />
+          </View>
+          <Text style={styles.menuText}>Payment history</Text>
+          <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+        </Pressable>
+
+        <Pressable
           testID="change-password-button"
           accessibilityRole="button"
           onPress={() => navigation.navigate("ChangePassword")}

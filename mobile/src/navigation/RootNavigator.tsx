@@ -1,7 +1,7 @@
 import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../auth/AuthContext";
-import { LoginScreen } from "../screens/LoginScreen";
+import { AuthStack } from "./AuthStack";
 import { MainTabs } from "./MainTabs";
 
 const theme = {
@@ -30,7 +30,7 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer theme={theme}>
-      {status === "signedIn" ? <MainTabs /> : <LoginScreen />}
+      {status === "signedIn" ? <MainTabs /> : <AuthStack />}
     </NavigationContainer>
   );
 }

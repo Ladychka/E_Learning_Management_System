@@ -5,8 +5,10 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,7 +25,7 @@ import {
   getMyEnrollments,
   MyEnrollment,
 } from "../api/courses";
-import { getMyGrades, Grade } from "../api/grades";
+import { appealGrade, getGrade, getMyGrades, Grade } from "../api/grades";
 import type { MainTabParamList } from "../navigation/types";
 
 type Props = BottomTabScreenProps<MainTabParamList, "Grades">;
@@ -68,6 +70,13 @@ export function GradesScreen(_props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [selectedCertificate, setSelectedCertificate] =
     useState<CertificateSummary | null>(null);
+  const [selectedGradeId, setSelectedGradeId] = useState<string | null>(null);
+  const [gradeDetail, setGradeDetail] = useState<Grade | null>(null);
+  const [gradeDetailLoading, setGradeDetailLoading] = useState(false);
+  const [gradeDetailError, setGradeDetailError] = useState<string | null>(null);
+  const [appealReason, setAppealReason] = useState("");
+  const [appealSubmitting, setAppealSubmitting] = useState(false);
+  const [appealMessage, setAppealMessage] = useState<string | null>(null);
   const hasLoaded = useRef(false);
   const requestId = useRef(0);
 
@@ -121,6 +130,59 @@ export function GradesScreen(_props: Props) {
   const onRefresh = () => {
     setRefreshing(true);
     load(false);
+  };
+
+  const openGrade = async (gradeId: string) => {
+    setSelectedGradeId(gradeId);
+    setGradeDetail(null);
+    setGradeDetailError(null);
+    setAppealReason("");
+    setAppealMessage(null);
+    setGradeDetailLoading(true);
+    try {
+      setGradeDetail(await getGrade(gradeId));
+    } catch (err) {
+      setGradeDetailError(getApiErrorMessage(err));
+    } finally {
+      setGradeDetailLoading(false);
+    }
+  };
+
+  const closeGrade = () => {
+    setSelectedGradeId(null);
+    setGradeDetail(null);
+    setGradeDetailError(null);
+    setAppealMessage(null);
+  };
+
+  const submitAppeal = async () => {
+    if (!selectedGradeId || appealSubmitting) return;
+    if (appealReason.trim().length < 10) {
+      setGradeDetailError("Explain the appeal in at least 10 characters.");
+      return;
+    }
+    setAppealSubmitting(true);
+    setGradeDetailError(null);
+    try {
+      await appealGrade(selectedGradeId, appealReason.trim());
+      setAppealReason("");
+      setAppealMessage("Appeal submitted. Your instructor will review it.");
+      setGradeDetail(await getGrade(selectedGradeId));
+    } catch (err) {
+      setGradeDetailError(getApiErrorMessage(err));
+    } finally {
+      setAppealSubmitting(false);
+    }
+  };
+
+  const shareCertificate = async (certificate: CertificateSummary) => {
+    try {
+      await Share.share({
+        message: `I earned a certificate for ${certificate.course.title} from FinTech ELMS. Certificate ${certificate.certificateNumber}.`,
+      });
+    } catch {
+      // The native share sheet can be dismissed without an error.
+    }
   };
 
   if (loading) {
@@ -278,7 +340,16 @@ export function GradesScreen(_props: Props) {
           </View>
         ) : (
           grades.map((grade) => (
-            <View key={grade.id} testID={`grade-card-${grade.id}`} style={styles.gradeCard}>
+            <Pressable
+              key={grade.id}
+              testID={`grade-card-${grade.id}`}
+              accessibilityRole="button"
+              onPress={() => openGrade(grade.id)}
+              style={({ pressed }) => [
+                styles.gradeCard,
+                pressed && styles.buttonPressed,
+              ]}
+            >
               <View style={styles.gradeHeader}>
                 <View style={styles.gradeTitleWrap}>
                   <Text style={styles.gradeCourse}>
@@ -308,7 +379,8 @@ export function GradesScreen(_props: Props) {
                   Graded by {grade.grader.firstName} {grade.grader.lastName}
                 </Text>
               ) : null}
-            </View>
+              <Text style={styles.viewDetailsText}>View details and appeal</Text>
+            </Pressable>
           ))
         )}
 
@@ -393,6 +465,21 @@ export function GradesScreen(_props: Props) {
               certificate lookup.
             </Text>
             <Pressable
+              testID="certificate-share"
+              accessibilityRole="button"
+              onPress={() => {
+                if (selectedCertificate) {
+                  void shareCertificate(selectedCertificate);
+                }
+              }}
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.secondaryButtonText}>Share certificate</Text>
+            </Pressable>
+            <Pressable
               testID="certificate-modal-close"
               accessibilityRole="button"
               onPress={() => setSelectedCertificate(null)}
@@ -404,6 +491,145 @@ export function GradesScreen(_props: Props) {
               <Text style={styles.primaryButtonText}>Close</Text>
             </Pressable>
           </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={selectedGradeId !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={closeGrade}
+      >
+        <View style={styles.modalBackdrop}>
+          <ScrollView
+            testID="grade-detail-modal"
+            style={styles.gradeModalCard}
+            contentContainerStyle={styles.gradeModalContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.modalEyebrow}>Grade detail</Text>
+            {gradeDetailLoading ? (
+              <View style={styles.modalLoading}>
+                <ActivityIndicator color="#0f766e" />
+                <Text style={styles.centerText}>Loading grade...</Text>
+              </View>
+            ) : gradeDetailError && !gradeDetail ? (
+              <View style={styles.modalLoading}>
+                <Text testID="grade-detail-error" style={styles.errorText}>
+                  {gradeDetailError}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => selectedGradeId && openGrade(selectedGradeId)}
+                  style={styles.secondaryButton}
+                >
+                  <Text style={styles.secondaryButtonText}>Retry</Text>
+                </Pressable>
+              </View>
+            ) : gradeDetail ? (
+              <>
+                <Text style={styles.modalCourse}>
+                  {gradeDetail.assignment?.title ??
+                    gradeDetail.quiz?.title ??
+                    "Assessment"}
+                </Text>
+                <Text style={styles.gradeCourse}>
+                  {gradeDetail.course?.title ?? "Course"}
+                </Text>
+                <Text style={styles.modalNumber}>
+                  {percentageOf(gradeDetail.percentage).toFixed(0)}% ·{" "}
+                  {Number(gradeDetail.points)} / {Number(gradeDetail.maxPoints)}{" "}
+                  points
+                  {gradeDetail.letterGrade
+                    ? ` · ${gradeDetail.letterGrade}`
+                    : ""}
+                  {gradeDetail.passFail ? ` · ${gradeDetail.passFail}` : ""}
+                </Text>
+                {gradeDetail.feedback ? (
+                  <Text style={styles.feedbackText}>
+                    {gradeDetail.feedback}
+                  </Text>
+                ) : null}
+                {gradeDetail.grader ? (
+                  <Text style={styles.graderText}>
+                    Graded by {gradeDetail.grader.firstName}{" "}
+                    {gradeDetail.grader.lastName}
+                  </Text>
+                ) : null}
+
+                <Text style={styles.appealHeading}>Appeals</Text>
+                {gradeDetail.appeals?.length ? (
+                  gradeDetail.appeals.map((appeal) => (
+                    <View key={appeal.id} style={styles.appealItem}>
+                      <Text style={styles.appealStatus}>
+                        {appeal.status.toUpperCase()}
+                      </Text>
+                      <Text style={styles.appealReason}>{appeal.reason}</Text>
+                      {appeal.response ? (
+                        <Text style={styles.appealResponse}>
+                          Instructor response: {appeal.response}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.mutedText}>
+                    No appeals submitted for this grade.
+                  </Text>
+                )}
+
+                <TextInput
+                  testID="grade-appeal-input"
+                  value={appealReason}
+                  onChangeText={setAppealReason}
+                  placeholder="Explain why this grade should be reviewed (at least 10 characters)"
+                  placeholderTextColor="#94a3b8"
+                  multiline
+                  style={styles.appealInput}
+                  editable={!appealSubmitting}
+                />
+                {gradeDetailError ? (
+                  <Text testID="grade-appeal-error" style={styles.errorText}>
+                    {gradeDetailError}
+                  </Text>
+                ) : null}
+                {appealMessage ? (
+                  <Text testID="grade-appeal-message" style={styles.actionMessage}>
+                    {appealMessage}
+                  </Text>
+                ) : null}
+                <Pressable
+                  testID="grade-appeal-submit"
+                  accessibilityRole="button"
+                  disabled={appealSubmitting || !appealReason.trim()}
+                  onPress={submitAppeal}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    (pressed || appealSubmitting || !appealReason.trim()) &&
+                      styles.buttonPressed,
+                  ]}
+                >
+                  {appealSubmitting ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>Submit appeal</Text>
+                  )}
+                </Pressable>
+              </>
+            ) : null}
+
+            <Pressable
+              testID="grade-detail-close"
+              accessibilityRole="button"
+              onPress={closeGrade}
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.secondaryButtonText}>Close</Text>
+            </Pressable>
+          </ScrollView>
         </View>
       </Modal>
     </SafeAreaView>
@@ -601,6 +827,80 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "800" },
+  viewDetailsText: {
+    color: "#0f766e",
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 10,
+  },
+  secondaryButton: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#0f766e",
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  secondaryButtonText: { color: "#0f766e", fontSize: 13, fontWeight: "800" },
+  actionMessage: {
+    color: "#047857",
+    backgroundColor: "#ecfdf5",
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  errorText: {
+    color: "#b42318",
+    backgroundColor: "#fff5f4",
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  gradeModalCard: {
+    width: "100%",
+    maxHeight: "88%",
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+  },
+  gradeModalContent: { padding: 20, gap: 6 },
+  modalLoading: { alignItems: "center", gap: 8, paddingVertical: 16 },
+  appealHeading: {
+    color: "#10233f",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 14,
+  },
+  appealItem: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 6,
+    gap: 4,
+  },
+  appealStatus: {
+    color: "#0f766e",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+  },
+  appealReason: { color: "#334155", fontSize: 12, lineHeight: 18 },
+  appealResponse: { color: "#5b677a", fontSize: 11, lineHeight: 17 },
+  appealInput: {
+    borderWidth: 1,
+    borderColor: "#d8dee9",
+    borderRadius: 12,
+    backgroundColor: "#fbfcfe",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: "#10233f",
+    fontSize: 13,
+    minHeight: 80,
+    textAlignVertical: "top",
+    marginTop: 10,
+  },
   buttonPressed: { opacity: 0.75 },
   modalBackdrop: {
     flex: 1,

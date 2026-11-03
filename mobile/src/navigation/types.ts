@@ -27,12 +27,22 @@ export type CoursesStackParamList = {
 export type HomeStackParamList = {
   Home: undefined;
   Notifications: undefined;
+  Announcements: undefined;
+  FinanceTools: undefined;
 };
 
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   EditProfile: undefined;
   ChangePassword: undefined;
+  PaymentHistory: undefined;
+};
+
+export type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { token?: string } | undefined;
 };
 
 export type MainTabParamList = {

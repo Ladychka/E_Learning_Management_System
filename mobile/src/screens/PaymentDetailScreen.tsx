@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { getApiErrorMessage } from "../api/client";
-import { getPayment, PaymentDetail } from "../api/payments";
+import { getPayment, getPaymentInvoice, PaymentDetail, PaymentInvoice } from "../api/payments";
 import type { CoursesStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<CoursesStackParamList, "PaymentDetail">;
@@ -43,6 +44,10 @@ export function PaymentDetailScreen({ navigation, route }: Props) {
   const [payment, setPayment] = useState<PaymentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [invoice, setInvoice] = useState<PaymentInvoice | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,6 +64,20 @@ export function PaymentDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const openInvoice = async () => {
+    setShowInvoice(true);
+    if (invoice || invoiceLoading) return;
+    setInvoiceLoading(true);
+    setInvoiceError(null);
+    try {
+      setInvoice(await getPaymentInvoice(paymentId));
+    } catch (err) {
+      setInvoiceError(getApiErrorMessage(err));
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -154,6 +173,18 @@ export function PaymentDetailScreen({ navigation, route }: Props) {
           </View>
         </View>
 
+        <Pressable
+          testID="payment-detail-invoice"
+          accessibilityRole="button"
+          onPress={openInvoice}
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.secondaryButtonText}>View invoice</Text>
+        </Pressable>
+
         {payment.course ? (
           <Pressable
             testID="payment-detail-course"
@@ -173,6 +204,65 @@ export function PaymentDetailScreen({ navigation, route }: Props) {
           </Pressable>
         ) : null}
       </ScrollView>
+
+      <Modal
+        visible={showInvoice}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowInvoice(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View testID="invoice-modal" style={styles.modalCard}>
+            <Text style={styles.modalEyebrow}>Invoice</Text>
+            {invoiceLoading ? (
+              <View style={styles.center}>
+                <ActivityIndicator color="#0f766e" />
+                <Text style={styles.centerText}>Preparing invoice...</Text>
+              </View>
+            ) : invoiceError ? (
+              <Text testID="invoice-error" style={styles.errorText}>
+                {invoiceError}
+              </Text>
+            ) : invoice ? (
+              <>
+                <Text style={styles.modalTitle}>{invoice.invoiceNumber}</Text>
+                <Text style={styles.modalMeta}>
+                  Issued {formatDate(invoice.issuedAt)}
+                </Text>
+                <Text style={styles.modalMeta}>
+                  Billed to {invoice.billedTo.name}
+                  {invoice.billedTo.email ? ` · ${invoice.billedTo.email}` : ""}
+                </Text>
+                {invoice.items.map((item, index) => (
+                  <View key={`${item.description}-${index}`} style={styles.row}>
+                    <Text style={styles.label}>{item.description}</Text>
+                    <Text style={styles.value}>
+                      {item.currency} {Number(item.amount).toFixed(2)}
+                    </Text>
+                  </View>
+                ))}
+                <View style={styles.row}>
+                  <Text style={styles.totalLabel}>Total</Text>
+                  <Text style={styles.totalValue}>
+                    {invoice.currency} {Number(invoice.total).toFixed(2)}
+                  </Text>
+                </View>
+              </>
+            ) : null}
+            <Pressable
+              testID="invoice-close"
+              accessibilityRole="button"
+              onPress={() => setShowInvoice(false)}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.primaryButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -227,6 +317,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "right",
   },
+  secondaryButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#0f766e",
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  secondaryButtonText: { color: "#0f766e", fontSize: 13, fontWeight: "800" },
   primaryButton: {
     backgroundColor: "#0f766e",
     borderRadius: 12,
@@ -235,6 +333,38 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "800" },
   buttonPressed: { opacity: 0.75 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 20,
+    gap: 8,
+  },
+  modalEyebrow: {
+    color: "#0f766e",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  modalTitle: { color: "#10233f", fontSize: 20, fontWeight: "800" },
+  modalMeta: { color: "#7a8699", fontSize: 11, lineHeight: 17 },
+  totalLabel: { color: "#10233f", fontSize: 14, fontWeight: "800" },
+  totalValue: { color: "#047857", fontSize: 15, fontWeight: "900" },
+  errorText: {
+    color: "#b42318",
+    backgroundColor: "#fff5f4",
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 12,
+  },
   textButton: { paddingVertical: 8 },
   textButtonText: { color: "#5b677a", fontSize: 13, fontWeight: "700" },
   center: {

@@ -31,6 +31,24 @@ jest.mock("../../api/lessons", () => ({
   completeLesson: jest.fn(),
 }));
 
+jest.mock("../../api/comments", () => ({
+  getLessonComments: jest.fn().mockResolvedValue([]),
+  createLessonComment: jest.fn(),
+  deleteLessonComment: jest.fn(),
+}));
+
+jest.mock("../../auth/AuthContext", () => ({
+  useAuth: () => ({
+    user: {
+      id: "student-1",
+      email: "student@elms.edu",
+      firstName: "Sokha",
+      lastName: "Student",
+      role: "STUDENT",
+    },
+  }),
+}));
+
 import { CourseCatalogScreen } from "../CourseCatalogScreen";
 import { CourseDetailScreen } from "../CourseDetailScreen";
 import { LessonViewerScreen } from "../LessonViewerScreen";

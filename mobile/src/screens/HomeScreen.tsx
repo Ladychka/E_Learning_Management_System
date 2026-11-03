@@ -83,6 +83,7 @@ export function HomeScreen({ navigation }: Props) {
         </Pressable>
 
         <Pressable
+          testID="home-my-courses-button"
           accessibilityRole="button"
           onPress={() => openTab("My Courses")}
           style={({ pressed }) => [
@@ -91,6 +92,30 @@ export function HomeScreen({ navigation }: Props) {
           ]}
         >
           <Text style={styles.secondaryButtonText}>View my courses</Text>
+        </Pressable>
+
+        <Pressable
+          testID="home-announcements-button"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate("Announcements")}
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            pressed && styles.secondaryButtonPressed,
+          ]}
+        >
+          <Text style={styles.secondaryButtonText}>Announcements</Text>
+        </Pressable>
+
+        <Pressable
+          testID="home-finance-tools-button"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate("FinanceTools")}
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            pressed && styles.secondaryButtonPressed,
+          ]}
+        >
+          <Text style={styles.secondaryButtonText}>Savings calculator</Text>
         </Pressable>
 
         <View style={styles.card}>

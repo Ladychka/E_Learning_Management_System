@@ -32,6 +32,38 @@ export async function loginRequest(email: string, password: string) {
   return response.data.data as LoginResult;
 }
 
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+};
+
+export async function registerRequest(payload: RegisterPayload) {
+  const response = await apiClient.post("/auth/register", {
+    ...payload,
+    role: "STUDENT",
+  });
+  return response.data as {
+    success: boolean;
+    message: string;
+    data: AuthUser;
+  };
+}
+
+export async function forgotPasswordRequest(email: string) {
+  const response = await apiClient.post("/auth/forgot-password", { email });
+  return response.data as { success: boolean; message: string };
+}
+
+export async function resetPasswordRequest(token: string, password: string) {
+  const response = await apiClient.post("/auth/reset-password", {
+    token,
+    password,
+  });
+  return response.data as { success: boolean; message: string };
+}
+
 export async function getMeRequest() {
   const response = await apiClient.get("/auth/me");
   return response.data.data as AuthUser;

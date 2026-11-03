@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +22,7 @@ import {
   LessonAttachment,
   LessonDetail,
 } from "../api/lessons";
+import { LessonComments } from "../components/LessonComments";
 import { resolveAssetUrl } from "../config";
 import type { CoursesStackParamList } from "../navigation/types";
 
@@ -224,9 +227,14 @@ export function LessonViewerScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Pressable
           testID="lesson-back-button"
@@ -450,6 +458,8 @@ export function LessonViewerScreen({ navigation, route }: Props) {
           </View>
         ) : null}
 
+        <LessonComments lessonId={lesson.id} />
+
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
             <Text style={styles.progressLabel}>Course progress</Text>
@@ -555,12 +565,14 @@ export function LessonViewerScreen({ navigation, route }: Props) {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f7fb" },
+  flex: { flex: 1 },
   content: { padding: 20, paddingBottom: 40, gap: 14 },
   center: {
     flex: 1,

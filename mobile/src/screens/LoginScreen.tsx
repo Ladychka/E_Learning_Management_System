@@ -11,15 +11,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import type { AuthStackParamList } from "../navigation/types";
 
-export function LoginScreen() {
+type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
+
+export function LoginScreen({ navigation }: Props) {
   const { login, authNotice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -83,12 +88,25 @@ export function LoginScreen() {
               onChangeText={setPassword}
               placeholder="Enter your password"
               placeholderTextColor="#8a94a6"
-              secureTextEntry
+              secureTextEntry={!showPassword}
               textContentType="password"
               style={styles.input}
               editable={!submitting}
               onSubmitEditing={handleLogin}
             />
+            <Pressable
+              testID="login-toggle-password"
+              accessibilityRole="button"
+              accessibilityLabel={
+                showPassword ? "Hide password" : "Show password"
+              }
+              onPress={() => setShowPassword((current) => !current)}
+              style={styles.inlineAction}
+            >
+              <Text style={styles.inlineActionText}>
+                {showPassword ? "Hide password" : "Show password"}
+              </Text>
+            </Pressable>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -109,6 +127,26 @@ export function LoginScreen() {
               )}
             </Pressable>
           </View>
+
+          <Pressable
+            testID="login-forgot-password"
+            accessibilityRole="button"
+            onPress={() => navigation.navigate("ForgotPassword")}
+            style={styles.textButton}
+          >
+            <Text style={styles.textButtonText}>Forgot password?</Text>
+          </Pressable>
+
+          <Pressable
+            testID="login-register"
+            accessibilityRole="button"
+            onPress={() => navigation.navigate("Register")}
+            style={styles.textButton}
+          >
+            <Text style={styles.textButtonText}>
+              New student? Create an account
+            </Text>
+          </Pressable>
 
           <Text style={styles.hint}>
             Demo student: student@elms.edu / Student123!
@@ -210,6 +248,18 @@ const styles = StyleSheet.create({
   },
   buttonPressed: { opacity: 0.75 },
   buttonText: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
+  inlineAction: {
+    alignSelf: "flex-end",
+    minHeight: 32,
+    justifyContent: "center",
+  },
+  inlineActionText: { color: "#0f766e", fontSize: 12, fontWeight: "800" },
+  textButton: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  textButtonText: { color: "#0f766e", fontSize: 13, fontWeight: "800" },
   hint: {
     color: "#7a8699",
     fontSize: 12,

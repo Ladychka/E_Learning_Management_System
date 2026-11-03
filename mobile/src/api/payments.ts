@@ -102,6 +102,39 @@ export async function getPayment(paymentId: string) {
   return response.data.data as PaymentDetail;
 }
 
+export type PaymentHistoryItem = PaymentRecord & {
+  course?: {
+    id: string;
+    title: string;
+    thumbnailUrl?: string | null;
+  } | null;
+};
+
+export async function getPaymentHistory() {
+  const response = await apiClient.get("/payments/history", {
+    params: { limit: 50 },
+  });
+  return (response.data?.data ?? []) as PaymentHistoryItem[];
+}
+
+export type PaymentInvoice = {
+  invoiceNumber: string;
+  issuedAt: string;
+  billedTo: { name: string; email?: string };
+  items: { description: string; amount: string | number; currency: string }[];
+  subtotal: string | number;
+  discount: string | number;
+  total: string | number;
+  currency: string;
+  paymentPlan?: string;
+  status: string;
+};
+
+export async function getPaymentInvoice(paymentId: string) {
+  const response = await apiClient.get(`/payments/${paymentId}/invoice`);
+  return response.data.data as PaymentInvoice;
+}
+
 export async function getPaymentQr(paymentId: string) {
   const response = await apiClient.get(`/payments/${paymentId}/qr`);
   return response.data.data as PaymentQr;

@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ChangePasswordScreen } from "../screens/ChangePasswordScreen";
 import { EditProfileScreen } from "../screens/EditProfileScreen";
+import { PaymentHistoryScreen } from "../screens/PaymentHistoryScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import type { ProfileStackParamList } from "./types";
 
@@ -17,6 +18,7 @@ export function ProfileStack() {
       <Stack.Screen name="ProfileHome" component={ProfileScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="PaymentHistory" component={PaymentHistoryScreen} />
     </Stack.Navigator>
   );
 }
