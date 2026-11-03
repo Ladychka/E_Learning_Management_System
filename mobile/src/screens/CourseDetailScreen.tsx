@@ -60,10 +60,14 @@ export function CourseDetailScreen({ navigation, route }: Props) {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [enrollmentWarning, setEnrollmentWarning] = useState<string | null>(
+    null
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setEnrollmentWarning(null);
     try {
       const detail = await getCourse(courseId);
       setCourse(detail);
@@ -72,7 +76,9 @@ export function CourseDetailScreen({ navigation, route }: Props) {
         const { enrollments } = await getMyEnrollments();
         setIsEnrolled(hasActiveEnrollment(enrollments, detail.id));
       } catch {
-        setIsEnrolled(false);
+        setEnrollmentWarning(
+          "We could not verify your enrollment status. Check your connection and retry before enrolling."
+        );
       }
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -87,22 +93,13 @@ export function CourseDetailScreen({ navigation, route }: Props) {
 
   const handleEnroll = async () => {
     if (!course) return;
-
-    const price = Number(course.price ?? 0);
-    const isFree = course.isFree || !price || price === 0;
     setEnrollError(null);
-
-    if (!isFree) {
-      setEnrollError(
-        "This is a paid course. Payment checkout is not available in the mobile app yet."
-      );
-      return;
-    }
 
     setEnrolling(true);
     try {
       await selfEnroll(course.id);
       setIsEnrolled(true);
+      setEnrollmentWarning(null);
     } catch (err) {
       setEnrollError(getApiErrorMessage(err));
     } finally {
@@ -267,6 +264,19 @@ export function CourseDetailScreen({ navigation, route }: Props) {
             </View>
           </View>
         </View>
+
+        {enrollmentWarning ? (
+          <View style={styles.warningCard}>
+            <Text style={styles.warningText}>{enrollmentWarning}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={load}
+              style={styles.retryLink}
+            >
+              <Text style={styles.retryLinkText}>Retry enrollment check</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.actionCard}>
           {isEnrolled ? (
@@ -467,7 +477,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   errorTitle: { color: "#10233f", fontSize: 18, fontWeight: "800" },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   heroCard: {
     backgroundColor: "#ffffff",
@@ -548,6 +558,17 @@ const styles = StyleSheet.create({
     borderColor: "#e3e8f0",
     padding: 18,
   },
+  warningCard: {
+    backgroundColor: "#fffbeb",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    padding: 14,
+    gap: 8,
+  },
+  warningText: { color: "#92400e", fontSize: 12, lineHeight: 18 },
+  retryLink: { alignSelf: "flex-start", minHeight: 32, justifyContent: "center" },
+  retryLinkText: { color: "#0f766e", fontSize: 12, fontWeight: "800" },
   actionTitle: { color: "#10233f", fontSize: 18, fontWeight: "800" },
   enrolledTitle: { color: "#047857", fontSize: 18, fontWeight: "800" },
   actionBody: {

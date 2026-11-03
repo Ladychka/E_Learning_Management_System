@@ -30,7 +30,8 @@ function DetailRow({ label, value }: { label: string; value?: string | null }) {
 export function ProfileScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
-  const avatarUrl = resolveAssetUrl(user?.avatarUrl);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const avatarUrl = avatarFailed ? null : resolveAssetUrl(user?.avatarUrl);
 
   const handleLogout = async () => {
     setSigningOut(true);
@@ -51,11 +52,18 @@ export function ProfileScreen({ navigation }: Props) {
           {avatarUrl ? (
             <Image
               testID="profile-avatar"
+              accessibilityLabel="Profile avatar"
               source={{ uri: avatarUrl }}
               style={styles.avatarImage}
+              onError={() => setAvatarFailed(true)}
             />
           ) : (
-            <View testID="profile-avatar" style={styles.avatar}>
+            <View
+              testID="profile-avatar"
+              accessible
+              accessibilityLabel="Profile avatar initials"
+              style={styles.avatar}
+            >
               <Text style={styles.avatarText}>
                 {user?.firstName?.charAt(0) ?? "S"}
                 {user?.lastName?.charAt(0) ?? ""}

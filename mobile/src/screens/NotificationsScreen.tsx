@@ -365,7 +365,7 @@ export function NotificationsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f7fb" },
   header: { paddingHorizontal: 20, paddingTop: 8 },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   titleRowHeader: {
     flexDirection: "row",
@@ -390,6 +390,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     minWidth: 90,
+    minHeight: 44,
+    justifyContent: "center",
     alignItems: "center",
   },
   markAllText: { color: "#0f766e", fontSize: 11, fontWeight: "800" },

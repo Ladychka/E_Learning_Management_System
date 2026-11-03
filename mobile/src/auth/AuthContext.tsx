@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   createContext,
   useCallback,
@@ -21,6 +22,7 @@ type AuthStatus = "loading" | "signedOut" | "signedIn";
 type AuthContextValue = {
   status: AuthStatus;
   user: AuthUser | null;
+  authNotice: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   updateUser: (next: AuthUser) => void;
@@ -31,16 +33,20 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
   const signOutLocally = useCallback(async () => {
     await tokenStorage.clear();
     setUser(null);
+    setAuthNotice(null);
     setStatus("signedOut");
   }, []);
 
   useEffect(() => {
     setSessionExpiredHandler(() => {
+      void tokenStorage.clear();
       setUser(null);
+      setAuthNotice("Your session expired. Please sign in again.");
       setStatus("signedOut");
     });
     return () => setSessionExpiredHandler(null);
@@ -64,13 +70,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const me = await getMeRequest();
         if (!active) return;
         setUser(me);
+        setAuthNotice(null);
         setStatus(me.role === "STUDENT" ? "signedIn" : "signedOut");
         if (me.role !== "STUDENT") {
           await tokenStorage.clear();
         }
-      } catch {
+      } catch (error) {
         if (!active) return;
-        await signOutLocally();
+        const statusCode = axios.isAxiosError(error)
+          ? error.response?.status
+          : undefined;
+        if (statusCode === 401 || statusCode === 403) {
+          await signOutLocally();
+        } else {
+          // Keep valid tokens on transient network/server failures so the
+          // student can retry instead of being forced to sign in again.
+          setUser(null);
+          setAuthNotice(
+            "We could not restore your session. Check your connection and sign in again."
+          );
+          setStatus("signedOut");
+        }
       }
     };
 
@@ -90,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setUser(result.user);
+    setAuthNotice(null);
     setStatus("signedIn");
     return result.user;
   }, []);
@@ -110,8 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ status, user, login, logout, updateUser }),
-    [status, user, login, logout, updateUser]
+    () => ({ status, user, authNotice, login, logout, updateUser }),
+    [status, user, authNotice, login, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -129,9 +129,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   bellButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#e3e8f0",

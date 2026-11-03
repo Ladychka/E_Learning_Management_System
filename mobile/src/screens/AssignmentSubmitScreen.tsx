@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -206,11 +208,15 @@ export function AssignmentSubmitScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <Pressable
           testID="assignment-submit-back"
           accessibilityRole="button"
@@ -332,6 +338,8 @@ export function AssignmentSubmitScreen({ navigation, route }: Props) {
                   <Pressable
                     testID={`assignment-remove-file-${index}`}
                     accessibilityRole="button"
+                    accessibilityLabel={`Remove ${file.name}`}
+                    hitSlop={8}
                     onPress={() => removeFile(index)}
                     style={styles.removeButton}
                   >
@@ -347,33 +355,35 @@ export function AssignmentSubmitScreen({ navigation, route }: Props) {
 
         {formError ? <Text style={styles.errorText}>{formError}</Text> : null}
 
-        <Pressable
-          testID="assignment-submit"
-          accessibilityRole="button"
-          disabled={submitting}
-          onPress={handleSubmit}
-          style={({ pressed }) => [
-            styles.primaryButton,
-            (pressed || submitting) && styles.buttonPressed,
-          ]}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.primaryButtonText}>
-              {existingSubmission ? "Update submission" : "Submit assignment"}
-            </Text>
-          )}
-        </Pressable>
-      </ScrollView>
+          <Pressable
+            testID="assignment-submit"
+            accessibilityRole="button"
+            disabled={submitting}
+            onPress={handleSubmit}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              (pressed || submitting) && styles.buttonPressed,
+            ]}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.primaryButtonText}>
+                {existingSubmission ? "Update submission" : "Submit assignment"}
+              </Text>
+            )}
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f7fb" },
+  flex: { flex: 1 },
   content: { padding: 20, paddingBottom: 40, gap: 14 },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   eyebrow: {
     color: "#0f766e",

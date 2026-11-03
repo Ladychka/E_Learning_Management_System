@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   errorTitle: { color: "#10233f", fontSize: 18, fontWeight: "800" },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   courseTitle: { color: "#0f766e", fontSize: 12, fontWeight: "800" },
   moduleTitle: {

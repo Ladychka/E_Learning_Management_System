@@ -107,8 +107,10 @@ export async function uploadSubmissionFile(asset: {
     );
   }
 
+  // Remove the instance-level JSON content type so Axios/the browser can set
+  // the multipart content type with the required boundary.
   const response = await apiClient.post("/upload/submissions", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: { "Content-Type": undefined as unknown as string },
   });
   return response.data.data as UploadedFile;
 }

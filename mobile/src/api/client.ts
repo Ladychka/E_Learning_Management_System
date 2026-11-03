@@ -11,24 +11,39 @@ export function setSessionExpiredHandler(handler: (() => void) | null) {
   sessionExpiredHandler = handler;
 }
 
+async function expireSession() {
+  await tokenStorage.clear();
+  sessionExpiredHandler?.();
+}
+
 async function refreshAccessToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
     const refreshToken = await tokenStorage.getRefreshToken();
-    if (!refreshToken) return null;
+    if (!refreshToken) {
+      await expireSession();
+      return null;
+    }
 
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
         refreshToken,
       });
       const accessToken = response.data?.data?.accessToken as string | undefined;
-      if (!accessToken) return null;
+      if (!accessToken) {
+        await expireSession();
+        return null;
+      }
       await tokenStorage.save(accessToken, refreshToken);
       return accessToken;
-    } catch {
-      await tokenStorage.clear();
-      sessionExpiredHandler?.();
+    } catch (error) {
+      const status = axios.isAxiosError(error)
+        ? error.response?.status
+        : undefined;
+      if (status === 401 || status === 403) {
+        await expireSession();
+      }
       return null;
     }
   })();

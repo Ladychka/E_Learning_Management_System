@@ -14,8 +14,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { getApiErrorMessage } from "../api/client";
 import {
+  CategoryWithCount,
   CourseListParams,
   CourseSummary,
+  getCategories,
   getCourses,
 } from "../api/courses";
 import { CourseThumbnail } from "../components/CourseThumbnail";
@@ -58,6 +60,8 @@ export function CourseCatalogScreen({ navigation }: Props) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [level, setLevel] = useState("");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("ALL");
+  const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +72,21 @@ export function CourseCatalogScreen({ navigation }: Props) {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    let active = true;
+    getCategories()
+      .then((data) => {
+        if (!active) return;
+        setCategories(data.filter((category) => !category.parentId));
+      })
+      .catch(() => {
+        // The catalog still works with search and level/price filters.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const load = useCallback(
     async (mode: "initial" | "refresh") => {
@@ -84,6 +103,7 @@ export function CourseCatalogScreen({ navigation }: Props) {
         };
         if (debouncedSearch) params.search = debouncedSearch;
         if (level) params.level = level;
+        if (categoryId) params.categoryId = categoryId;
         if (priceFilter !== "ALL") params.isFree = priceFilter === "FREE";
 
         const result = await getCourses(params);
@@ -100,7 +120,7 @@ export function CourseCatalogScreen({ navigation }: Props) {
         }
       }
     },
-    [debouncedSearch, level, priceFilter]
+    [debouncedSearch, level, categoryId, priceFilter]
   );
 
   useEffect(() => {
@@ -110,6 +130,7 @@ export function CourseCatalogScreen({ navigation }: Props) {
   const resetFilters = () => {
     setSearch("");
     setLevel("");
+    setCategoryId("");
     setPriceFilter("ALL");
   };
 
@@ -214,6 +235,36 @@ export function CourseCatalogScreen({ navigation }: Props) {
                 key={filter.value || "all-levels"}
                 accessibilityRole="button"
                 onPress={() => setLevel(filter.value)}
+                style={[styles.chip, active && styles.chipActive]}
+              >
+                <Text
+                  style={[styles.chipText, active && styles.chipTextActive]}
+                >
+                  {filter.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipRow}
+        >
+          {[
+            { label: "All topics", value: "" },
+            ...categories.map((category) => ({
+              label: category.name,
+              value: category.id,
+            })),
+          ].map((filter) => {
+            const active = categoryId === filter.value;
+            return (
+              <Pressable
+                key={filter.value || "all-topics"}
+                accessibilityRole="button"
+                onPress={() => setCategoryId(filter.value)}
                 style={[styles.chip, active && styles.chipActive]}
               >
                 <Text

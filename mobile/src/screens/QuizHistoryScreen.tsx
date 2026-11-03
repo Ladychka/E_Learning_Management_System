@@ -255,7 +255,7 @@ export function QuizHistoryScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f7fb" },
   header: { paddingHorizontal: 20, paddingTop: 8 },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   eyebrow: {
     color: "#0f766e",

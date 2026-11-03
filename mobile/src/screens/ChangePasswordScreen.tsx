@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -28,13 +28,6 @@ export function ChangePasswordScreen({ navigation }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const logoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (logoutTimer.current) clearTimeout(logoutTimer.current);
-    };
-  }, []);
 
   const handleChange = async () => {
     if (!currentPassword) {
@@ -65,8 +58,10 @@ export function ChangePasswordScreen({ navigation }: Props) {
     try {
       await changePasswordRequest(currentPassword, newPassword);
       setSuccess(true);
-      logoutTimer.current = setTimeout(() => {
-        logout();
+      // Always end the session, even if the student navigates away during the
+      // brief success message, because the backend has revoked refresh tokens.
+      setTimeout(() => {
+        void logout();
       }, 1200);
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -191,7 +186,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f7fb" },
   flex: { flex: 1 },
   content: { padding: 20, paddingBottom: 40, gap: 12 },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   eyebrow: {
     color: "#0f766e",

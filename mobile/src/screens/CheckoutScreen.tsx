@@ -394,6 +394,7 @@ export function CheckoutScreen({ navigation, route }: Props) {
           {qrImageUrl ? (
             <Image
               testID="checkout-qr"
+              accessibilityLabel="Payment QR code"
               source={{ uri: qrImageUrl }}
               style={styles.qrImage}
               resizeMode="contain"
@@ -504,7 +505,7 @@ export function CheckoutScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f7fb" },
   content: { padding: 20, paddingBottom: 40, gap: 14 },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   eyebrow: {
     color: "#0f766e",

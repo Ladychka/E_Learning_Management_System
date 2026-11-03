@@ -15,7 +15,7 @@ import { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
 export function LoginScreen() {
-  const { login } = useAuth();
+  const { login, authNotice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +53,12 @@ export function LoginScreen() {
           </View>
           <Text style={styles.title}>FinTech ELMS</Text>
           <Text style={styles.subtitle}>Sign in to continue learning</Text>
+
+          {authNotice ? (
+            <Text testID="login-notice" style={styles.notice}>
+              {authNotice}
+            </Text>
+          ) : null}
 
           <View style={styles.form}>
             <Text style={styles.label}>Email</Text>
@@ -182,6 +188,18 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginTop: 10,
     fontSize: 13,
+  },
+  notice: {
+    color: "#92400e",
+    backgroundColor: "#fffbeb",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 14,
+    fontSize: 12,
+    lineHeight: 18,
   },
   button: {
     backgroundColor: "#0f766e",

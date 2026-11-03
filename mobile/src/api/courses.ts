@@ -15,6 +15,11 @@ export type CategorySummary = {
   slug: string;
 };
 
+export type CategoryWithCount = CategorySummary & {
+  parentId?: string | null;
+  _count?: { courses?: number };
+};
+
 export type CourseSummary = {
   id: string;
   title: string;
@@ -118,6 +123,11 @@ export type CourseListResult = {
     totalPages: number;
   };
 };
+
+export async function getCategories() {
+  const response = await apiClient.get("/categories");
+  return (response.data?.data ?? []) as CategoryWithCount[];
+}
 
 export async function getCourses(params: CourseListParams = {}) {
   const response = await apiClient.get("/courses", { params });

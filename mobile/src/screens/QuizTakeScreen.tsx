@@ -75,6 +75,7 @@ export function QuizTakeScreen({ navigation, route }: Props) {
   const submittingRef = useRef(false);
   const submittedRef = useRef(false);
   const autoSubmitTriggered = useRef(false);
+  const attemptDeadline = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -139,10 +140,14 @@ export function QuizTakeScreen({ navigation, route }: Props) {
           0,
           Math.floor((Date.now() - startedAt) / 1000)
         );
-        setRemainingSeconds(
-          Math.max(0, result.attempt.timeLimit * 60 - elapsedSeconds)
+        const remaining = Math.max(
+          0,
+          result.attempt.timeLimit * 60 - elapsedSeconds
         );
+        attemptDeadline.current = Date.now() + remaining * 1000;
+        setRemainingSeconds(remaining);
       } else {
+        attemptDeadline.current = null;
         setRemainingSeconds(null);
       }
     } catch (err) {
@@ -191,23 +196,26 @@ export function QuizTakeScreen({ navigation, route }: Props) {
   }, [navigation, questions, quiz?.title]);
 
   useEffect(() => {
-    if (!attempt || remainingSeconds === null) return;
+    if (!attempt || attemptDeadline.current === null) return;
 
-    if (remainingSeconds <= 0) {
-      if (!autoSubmitTriggered.current) {
-        autoSubmitTriggered.current = true;
-        submitCurrentAttempt();
-      }
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setRemainingSeconds((current) =>
-        current === null ? null : Math.max(0, current - 1)
+    const updateCountdown = () => {
+      const deadline = attemptDeadline.current;
+      if (deadline === null) return;
+      setRemainingSeconds(
+        Math.max(0, Math.floor((deadline - Date.now()) / 1000))
       );
-    }, 1000);
+    };
 
-    return () => clearTimeout(timer);
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [attempt]);
+
+  useEffect(() => {
+    if (!attempt || remainingSeconds === null || remainingSeconds > 0) return;
+    if (autoSubmitTriggered.current) return;
+    autoSubmitTriggered.current = true;
+    submitCurrentAttempt();
   }, [attempt, remainingSeconds, submitCurrentAttempt]);
 
   const setAnswer = (questionId: string, value: string) => {
@@ -499,7 +507,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f7fb" },
   flex: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 8 },
-  backButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   backButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "800" },
   eyebrow: {
     color: "#0f766e",
