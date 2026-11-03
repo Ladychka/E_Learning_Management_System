@@ -305,6 +305,22 @@ export function CourseContentScreen({ navigation, route }: Props) {
           >
             <Text style={styles.secondaryButtonText}>Quizzes</Text>
           </Pressable>
+          <Pressable
+            testID="course-assignments-button"
+            accessibilityRole="button"
+            onPress={() =>
+              navigation.navigate("AssignmentList", {
+                courseId,
+                title: course.title,
+              })
+            }
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              pressed && styles.secondaryButtonPressed,
+            ]}
+          >
+            <Text style={styles.secondaryButtonText}>Assignments</Text>
+          </Pressable>
         </View>
       </View>
 

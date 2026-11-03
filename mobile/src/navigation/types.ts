@@ -9,11 +9,15 @@ export type CoursesStackParamList = {
   QuizTake: { quizId: string; lessonId: string; title?: string };
   QuizResult: { attemptId: string; title?: string };
   QuizHistory: { quizId: string; title?: string };
+  AssignmentList: { courseId: string; title?: string };
+  AssignmentDetail: { assignmentId: string; title?: string };
+  AssignmentSubmit: { assignmentId: string; title?: string };
 };
 
 export type MainTabParamList = {
   Home: undefined;
   Browse: NavigatorScreenParams<CoursesStackParamList> | undefined;
   "My Courses": undefined;
+  Grades: undefined;
   Profile: undefined;
 };

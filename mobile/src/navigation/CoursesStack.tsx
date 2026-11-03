@@ -1,4 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { AssignmentDetailScreen } from "../screens/AssignmentDetailScreen";
+import { AssignmentListScreen } from "../screens/AssignmentListScreen";
+import { AssignmentSubmitScreen } from "../screens/AssignmentSubmitScreen";
 import { CourseCatalogScreen } from "../screens/CourseCatalogScreen";
 import { CourseContentScreen } from "../screens/CourseContentScreen";
 import { CourseDetailScreen } from "../screens/CourseDetailScreen";
@@ -27,6 +30,9 @@ export function CoursesStack() {
       <Stack.Screen name="QuizTake" component={QuizTakeScreen} />
       <Stack.Screen name="QuizResult" component={QuizResultScreen} />
       <Stack.Screen name="QuizHistory" component={QuizHistoryScreen} />
+      <Stack.Screen name="AssignmentList" component={AssignmentListScreen} />
+      <Stack.Screen name="AssignmentDetail" component={AssignmentDetailScreen} />
+      <Stack.Screen name="AssignmentSubmit" component={AssignmentSubmitScreen} />
     </Stack.Navigator>
   );
 }

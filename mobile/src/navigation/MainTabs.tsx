@@ -1,4 +1,5 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { GradesScreen } from "../screens/GradesScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { MyCoursesScreen } from "../screens/MyCoursesScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
@@ -17,16 +18,17 @@ export function MainTabs() {
         tabBarStyle: {
           backgroundColor: "#ffffff",
           borderTopColor: "#e3e8f0",
-          height: 62,
-          paddingBottom: 8,
+          height: 70,
+          paddingBottom: 10,
           paddingTop: 6,
         },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Browse" component={CoursesStack} />
       <Tab.Screen name="My Courses" component={MyCoursesScreen} />
+      <Tab.Screen name="Grades" component={GradesScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

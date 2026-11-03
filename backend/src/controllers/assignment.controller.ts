@@ -84,14 +84,27 @@ export const getAssignments = async (
       where.course = { instructorId: req.user.id };
     }
 
+    const include: Record<string, unknown> = {
+      course: { select: { id: true, title: true } },
+      creator: { select: { id: true, firstName: true, lastName: true } },
+      _count: { select: { submissions: true } },
+    };
+
+    if (req.user?.role === "STUDENT") {
+      include.submissions = {
+        where: { studentId: req.user.id },
+        orderBy: { submittedAt: "desc" },
+        take: 1,
+      };
+      include.grades = {
+        where: { studentId: req.user.id, isPublished: true },
+      };
+    }
+
     const [assignments, total] = await Promise.all([
       prisma.assignment.findMany({
         where,
-        include: {
-          course: { select: { id: true, title: true } },
-          creator: { select: { id: true, firstName: true, lastName: true } },
-          _count: { select: { submissions: true } },
-        },
+        include,
         orderBy: { createdAt: "desc" },
         skip,
         take: limitNum,
@@ -99,9 +112,21 @@ export const getAssignments = async (
       prisma.assignment.count({ where }),
     ]);
 
+    const data =
+      req.user?.role === "STUDENT"
+        ? assignments.map((assignment: any) => {
+            const { submissions, grades, ...rest } = assignment;
+            return {
+              ...rest,
+              submission: submissions?.[0] ?? null,
+              grade: grades?.[0] ?? null,
+            };
+          })
+        : assignments;
+
     res.json({
       success: true,
-      data: assignments,
+      data,
       meta: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) },
     });
   } catch (error) {
@@ -127,7 +152,7 @@ export const getAssignmentById = async (
           : true,
         grades:
           req.user?.role === "STUDENT"
-            ? { where: { studentId: req.user.id } }
+            ? { where: { studentId: req.user.id, isPublished: true } }
             : true,
       },
     });
