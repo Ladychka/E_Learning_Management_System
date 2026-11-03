@@ -3,6 +3,10 @@ import { CourseCatalogScreen } from "../screens/CourseCatalogScreen";
 import { CourseContentScreen } from "../screens/CourseContentScreen";
 import { CourseDetailScreen } from "../screens/CourseDetailScreen";
 import { LessonViewerScreen } from "../screens/LessonViewerScreen";
+import { QuizHistoryScreen } from "../screens/QuizHistoryScreen";
+import { QuizListScreen } from "../screens/QuizListScreen";
+import { QuizResultScreen } from "../screens/QuizResultScreen";
+import { QuizTakeScreen } from "../screens/QuizTakeScreen";
 import type { CoursesStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<CoursesStackParamList>();
@@ -19,6 +23,10 @@ export function CoursesStack() {
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
       <Stack.Screen name="CourseContent" component={CourseContentScreen} />
       <Stack.Screen name="LessonViewer" component={LessonViewerScreen} />
+      <Stack.Screen name="QuizList" component={QuizListScreen} />
+      <Stack.Screen name="QuizTake" component={QuizTakeScreen} />
+      <Stack.Screen name="QuizResult" component={QuizResultScreen} />
+      <Stack.Screen name="QuizHistory" component={QuizHistoryScreen} />
     </Stack.Navigator>
   );
 }

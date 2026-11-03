@@ -17,7 +17,17 @@ export const startQuizAttempt = async (
       where: { id: quizId },
       include: {
         lesson: { include: { module: { include: { course: true } } } },
-        questions: { orderBy: { sortOrder: "asc" } },
+        questions: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            id: true,
+            type: true,
+            question: true,
+            options: true,
+            points: true,
+            sortOrder: true,
+          },
+        },
       },
     });
     if (!quiz) throw new AppError("Quiz not found", 404);
@@ -27,7 +37,10 @@ export const startQuizAttempt = async (
     const enrollment = await prisma.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId: quiz.lesson.module.courseId } },
     });
-    if (!enrollment || enrollment.status !== "active") {
+    if (
+      !enrollment ||
+      (enrollment.status !== "active" && enrollment.status !== "completed")
+    ) {
       throw new AppError("You must be enrolled in this course to take the quiz", 403);
     }
 

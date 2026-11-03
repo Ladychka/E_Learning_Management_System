@@ -76,6 +76,128 @@ export const getQuizByLesson = async (
   }
 };
 
+export const getCourseQuizzes = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user!.id;
+
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, title: true, status: true },
+    });
+    if (!course || course.status !== "PUBLISHED") {
+      throw new AppError("Course not found", 404);
+    }
+
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { status: true },
+    });
+    if (
+      !enrollment ||
+      (enrollment.status !== "active" && enrollment.status !== "completed")
+    ) {
+      throw new AppError(
+        "You must be enrolled in this course to view quizzes",
+        403
+      );
+    }
+
+    const quizzes = await prisma.quiz.findMany({
+      where: {
+        isPublished: true,
+        lesson: {
+          isPublished: true,
+          module: { courseId, isPublished: true },
+        },
+      },
+      include: {
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            sortOrder: true,
+            moduleId: true,
+            module: {
+              select: { id: true, title: true, sortOrder: true },
+            },
+          },
+        },
+        _count: { select: { questions: true } },
+        quizAttempts: {
+          where: { userId },
+          orderBy: { startedAt: "desc" },
+          select: {
+            id: true,
+            status: true,
+            score: true,
+            maxScore: true,
+            percentage: true,
+            attemptNumber: true,
+            startedAt: true,
+            submittedAt: true,
+          },
+        },
+      },
+    });
+
+    const data = quizzes
+      .sort(
+        (a, b) =>
+          a.lesson.module.sortOrder - b.lesson.module.sortOrder ||
+          a.lesson.sortOrder - b.lesson.sortOrder ||
+          a.title.localeCompare(b.title)
+      )
+      .map((quiz) => {
+        const completedAttempts = quiz.quizAttempts.filter(
+          (attempt) => attempt.status === "completed"
+        ).length;
+        const remainingAttempts = quiz.maxAttempts
+          ? Math.max(0, quiz.maxAttempts - completedAttempts)
+          : null;
+        const bestPercentage = quiz.quizAttempts.reduce<number | null>(
+          (best, attempt) => {
+            if (attempt.percentage === null) return best;
+            const percentage = Number(attempt.percentage);
+            return best === null || percentage > best ? percentage : best;
+          },
+          null
+        );
+
+        return {
+          id: quiz.id,
+          lessonId: quiz.lessonId,
+          title: quiz.title,
+          description: quiz.description,
+          timeLimit: quiz.timeLimit,
+          maxAttempts: quiz.maxAttempts,
+          passingScore: quiz.passingScore,
+          isPublished: quiz.isPublished,
+          questionCount: quiz._count.questions,
+          lesson: {
+            id: quiz.lesson.id,
+            title: quiz.lesson.title,
+            moduleId: quiz.lesson.moduleId,
+            moduleTitle: quiz.lesson.module.title,
+          },
+          attemptCount: quiz.quizAttempts.length,
+          completedAttempts,
+          remainingAttempts,
+          bestPercentage,
+          lastAttempt: quiz.quizAttempts[0] ?? null,
+        };
+      });
+
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createOrUpdateQuiz = async (
   req: Request,
   res: Response,

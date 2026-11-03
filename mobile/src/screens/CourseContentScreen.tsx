@@ -289,6 +289,22 @@ export function CourseContentScreen({ navigation, route }: Props) {
                 : "Start learning"}
             </Text>
           </Pressable>
+          <Pressable
+            testID="course-quizzes-button"
+            accessibilityRole="button"
+            onPress={() =>
+              navigation.navigate("QuizList", {
+                courseId,
+                title: course.title,
+              })
+            }
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              pressed && styles.secondaryButtonPressed,
+            ]}
+          >
+            <Text style={styles.secondaryButtonText}>Quizzes</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -471,6 +487,17 @@ const styles = StyleSheet.create({
   },
   primaryButtonPressed: { opacity: 0.8 },
   primaryButtonText: { color: "#ffffff", fontSize: 13, fontWeight: "800" },
+  secondaryButton: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#0f766e",
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  secondaryButtonPressed: { opacity: 0.7 },
+  secondaryButtonText: { color: "#0f766e", fontSize: 13, fontWeight: "800" },
   textButton: { paddingVertical: 8 },
   textButtonText: { color: "#5b677a", fontSize: 13, fontWeight: "700" },
 });

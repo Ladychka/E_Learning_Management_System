@@ -9,6 +9,7 @@ import {
 } from "../validations/quiz.schema";
 import {
   getQuizByLesson,
+  getCourseQuizzes,
   createOrUpdateQuiz,
   deleteQuiz,
   addQuestion,
@@ -20,6 +21,12 @@ import {
 const router = Router();
 
 router.get("/lessons/:lessonId/quiz", authenticate, getQuizByLesson);
+router.get(
+  "/courses/:courseId/quizzes",
+  authenticate,
+  authorize("STUDENT"),
+  getCourseQuizzes
+);
 router.post(
   "/lessons/:lessonId/quiz",
   authenticate,

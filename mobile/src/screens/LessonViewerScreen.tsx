@@ -399,8 +399,24 @@ export function LessonViewerScreen({ navigation, route }: Props) {
                   : ""}
               </Text>
               <Text style={styles.quizNotice}>
-                Quiz attempts will be added in the next mobile feature.
+                Open the quiz list to start an attempt or review past results.
               </Text>
+              <Pressable
+                testID="lesson-open-quizzes"
+                accessibilityRole="button"
+                onPress={() =>
+                  navigation.navigate("QuizList", {
+                    courseId: lesson.module.course.id,
+                    title: lesson.module.course.title,
+                  })
+                }
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.secondaryButtonPressed,
+                ]}
+              >
+                <Text style={styles.secondaryButtonText}>Open quizzes</Text>
+              </Pressable>
             </View>
           ) : null}
         </View>
