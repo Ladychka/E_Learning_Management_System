@@ -116,6 +116,18 @@ environment variables or `eas.json`.
 - [ ] Promote the release to production after approval.
 - [ ] Keep the signing keystore and Play service account key backed up securely.
 
+## Verification performed
+
+- `npx tsc --noEmit`: mobile and backend pass.
+- `npm test`: 10 suites / 31 tests pass.
+- Backend `npx vitest run`: 8 files / 34 tests pass.
+- `npx expo export --platform web` with an HTTPS placeholder API URL passes.
+- Seeded UI flows passed: login, free enrollment, lesson completion, quiz,
+  assignment submission/grades, paid checkout with webhook success,
+  notifications, and profile/password settings.
+- The seed ran twice with no duplicate users, enrollments, lesson completions,
+  course slugs, or certificate numbers.
+
 ## Manual steps still required
 
 1. Create/confirm an Expo account and an EAS account, then run `npx eas-cli init`.
