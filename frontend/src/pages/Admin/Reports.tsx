@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { reportApi } from "../../lib/api";
-import { BarChart3, Users, Award, Download, DollarSign, CheckCircle2 } from "lucide-react";
+import { BarChart3, Users, Award, Download, DollarSign, CheckCircle2, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 export const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"completion" | "revenue" | "students">("completion");
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState<string | null>(null);
 
   // Data states
   const [completionStats, setCompletionStats] = useState<any[]>([]);
@@ -35,6 +37,41 @@ export const Reports: React.FC = () => {
     }
   };
 
+  const handleExport = async (type: "completion" | "revenue" | "students") => {
+    try {
+      setExporting(type);
+      const res = await reportApi.exportReportCsv(type);
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const dateStr = new Date().toISOString().split("T")[0];
+      const filename =
+        type === "completion"
+          ? `course_completion_report_${dateStr}.csv`
+          : type === "revenue"
+          ? `revenue_report_${dateStr}.csv`
+          : `student_progress_report_${dateStr}.csv`;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(
+        type === "completion"
+          ? "Course completion CSV downloaded"
+          : type === "revenue"
+          ? "Revenue CSV downloaded"
+          : "Student progress CSV downloaded"
+      );
+    } catch (err: any) {
+      console.error("Export failed:", err);
+      toast.error(err.response?.data?.message || `Failed to export ${type} CSV`);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -47,21 +84,33 @@ export const Reports: React.FC = () => {
             US-081 – US-090: Course completion rates, assessment health, student progress, and KHQR/Bakong revenue.
           </p>
         </div>
-        <div className="flex gap-2">
-          <a
-            href={reportApi.getExportUrl("completion")}
-            className="inline-flex items-center px-3.5 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 shadow-sm"
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => handleExport("completion")}
+            disabled={exporting !== null}
+            className="inline-flex items-center px-3.5 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 shadow-sm disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed transition-colors"
           >
-            <Download className="w-3.5 h-3.5 mr-1.5" />
-            Export Completion CSV
-          </a>
-          <a
-            href={reportApi.getExportUrl("revenue")}
-            className="inline-flex items-center px-3.5 py-2 bg-blue-600 rounded-lg text-xs font-semibold text-white hover:bg-blue-700 shadow-sm"
+            {exporting === "completion" ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-gray-500" />
+            ) : (
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {exporting === "completion" ? "Exporting..." : "Export Completion CSV"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleExport("revenue")}
+            disabled={exporting !== null}
+            className="inline-flex items-center px-3.5 py-2 bg-blue-600 rounded-lg text-xs font-semibold text-white hover:bg-blue-700 shadow-sm disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed transition-colors"
           >
-            <Download className="w-3.5 h-3.5 mr-1.5" />
-            Export Revenue CSV
-          </a>
+            {exporting === "revenue" ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-white" />
+            ) : (
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {exporting === "revenue" ? "Exporting..." : "Export Revenue CSV"}
+          </button>
         </div>
       </div>
 
@@ -210,8 +259,21 @@ export const Reports: React.FC = () => {
           {/* Student Progress Tab */}
           {activeTab === "students" && (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                 <h3 className="font-semibold text-gray-900 text-sm">Learner Progress & Completion Register</h3>
+                <button
+                  type="button"
+                  onClick={() => handleExport("students")}
+                  disabled={exporting !== null}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                >
+                  {exporting === "students" ? (
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-gray-500" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                  )}
+                  {exporting === "students" ? "Exporting..." : "Export Students CSV"}
+                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">

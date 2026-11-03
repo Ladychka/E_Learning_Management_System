@@ -39,6 +39,23 @@ function calculateGPA(percentage: number): number {
   return 0.0;
 }
 
+/**
+ * Instructors may only mutate grades for courses they own. Admins bypass the
+ * ownership check. This closes a cross-course grade tampering hole.
+ */
+async function assertCourseAccess(req: Request, courseId: string): Promise<void> {
+  if (req.user?.role === "ADMIN") return;
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { instructorId: true },
+  });
+  if (!course) throw new AppError("Course not found", 404);
+  if (course.instructorId !== req.user?.id) {
+    throw new AppError("Not authorized to manage grades for this course", 403);
+  }
+}
+
 export const createGrade = async (
   req: Request,
   res: Response,
@@ -50,6 +67,8 @@ export const createGrade = async (
     if (assignmentId && quizId) {
       throw new AppError("Cannot grade both an assignment and a quiz in the same record", 400);
     }
+
+    await assertCourseAccess(req, courseId);
 
     const percentage = maxPoints > 0 ? Number(((points / maxPoints) * 100).toFixed(2)) : 0;
     const finalLetterGrade = letterGrade || calculateLetterGrade(percentage);
@@ -217,6 +236,9 @@ export const getGradeById = async (
     if (req.user?.role === "STUDENT" && !grade.isPublished) {
       throw new AppError("Grade has not been published yet", 403);
     }
+    if (req.user?.role === "INSTRUCTOR") {
+      await assertCourseAccess(req, grade.courseId);
+    }
 
     res.json({ success: true, data: grade });
   } catch (error) {
@@ -235,6 +257,8 @@ export const updateGrade = async (
 
     const existing = await prisma.grade.findUnique({ where: { id } });
     if (!existing) throw new AppError("Grade not found", 404);
+
+    await assertCourseAccess(req, existing.courseId);
 
     const updateData: Record<string, unknown> = {};
     if (points !== undefined) updateData.points = points;
@@ -322,6 +346,8 @@ export const publishGrade = async (
 
     const existing = await prisma.grade.findUnique({ where: { id } });
     if (!existing) throw new AppError("Grade not found", 404);
+
+    await assertCourseAccess(req, existing.courseId);
 
     const grade = await prisma.grade.update({
       where: { id },
@@ -544,6 +570,8 @@ export const respondAppeal = async (
     });
     if (!appeal) throw new AppError("Appeal not found", 404);
 
+    await assertCourseAccess(req, appeal.grade.courseId);
+
     const updated = await prisma.gradeAppeal.update({
       where: { id },
       data: { status, response: response || null },
@@ -598,6 +626,10 @@ export const getCourseGPA = async (
   try {
     const { courseId } = req.params;
     const { studentId } = req.query as { studentId?: string };
+
+    if (req.user?.role === "INSTRUCTOR") {
+      await assertCourseAccess(req, courseId);
+    }
 
     const where: Record<string, unknown> = { courseId, isPublished: true };
     if (studentId) where.studentId = studentId;

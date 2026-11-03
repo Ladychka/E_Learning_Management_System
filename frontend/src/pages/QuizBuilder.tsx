@@ -42,6 +42,15 @@ export const QuizBuilder = () => {
 
   const [showQuestionForm, setShowQuestionForm] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [creatingQuiz, setCreatingQuiz] = useState(false);
+  const [newQuiz, setNewQuiz] = useState({
+    title: "",
+    description: "",
+    timeLimit: "",
+    maxAttempts: "",
+    passingScore: "60",
+    isPublished: false,
+  });
   const [questionForm, setQuestionForm] = useState({
     type: "MCQ",
     question: "",
@@ -70,6 +79,31 @@ export const QuizBuilder = () => {
   useEffect(() => {
     fetchQuiz();
   }, [lessonId]);
+
+  const handleCreateQuiz = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lessonId || !newQuiz.title.trim()) {
+      toast.error("Please enter a quiz title");
+      return;
+    }
+    setCreatingQuiz(true);
+    try {
+      await quizApi.createQuiz(lessonId, {
+        title: newQuiz.title.trim(),
+        description: newQuiz.description || undefined,
+        timeLimit: newQuiz.timeLimit ? parseInt(newQuiz.timeLimit, 10) : undefined,
+        maxAttempts: newQuiz.maxAttempts ? parseInt(newQuiz.maxAttempts, 10) : undefined,
+        passingScore: newQuiz.passingScore ? parseInt(newQuiz.passingScore, 10) : undefined,
+        isPublished: newQuiz.isPublished,
+      });
+      toast.success("Quiz created");
+      await fetchQuiz();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to create quiz");
+    } finally {
+      setCreatingQuiz(false);
+    }
+  };
 
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,11 +189,83 @@ export const QuizBuilder = () => {
           <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-700">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-2xl font-bold">Quiz Builder</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Quiz Builder</h1>
+            <p className="text-sm text-gray-500">{lesson?.title}</p>
+          </div>
         </div>
-        <div className="card py-12 text-center text-gray-500">
-          No quiz attached to this lesson yet. Go to the Course Builder to attach a quiz first.
-        </div>
+
+        <form onSubmit={handleCreateQuiz} className="card space-y-4">
+          <h3 className="font-semibold">Create quiz for this lesson</h3>
+          <div>
+            <label className="block text-sm font-medium">Title</label>
+            <input
+              required
+              value={newQuiz.title}
+              onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
+              className="input mt-1"
+              placeholder="e.g. Module 1 Assessment"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Description</label>
+            <textarea
+              rows={2}
+              value={newQuiz.description}
+              onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
+              className="input mt-1"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="block text-sm font-medium">Time limit (min)</label>
+              <input
+                type="number"
+                min="1"
+                value={newQuiz.timeLimit}
+                onChange={(e) => setNewQuiz({ ...newQuiz, timeLimit: e.target.value })}
+                className="input mt-1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Max attempts</label>
+              <input
+                type="number"
+                min="1"
+                value={newQuiz.maxAttempts}
+                onChange={(e) => setNewQuiz({ ...newQuiz, maxAttempts: e.target.value })}
+                className="input mt-1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Passing score (%)</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={newQuiz.passingScore}
+                onChange={(e) => setNewQuiz({ ...newQuiz, passingScore: e.target.value })}
+                className="input mt-1"
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={newQuiz.isPublished}
+              onChange={(e) => setNewQuiz({ ...newQuiz, isPublished: e.target.checked })}
+            />
+            Publish quiz immediately
+          </label>
+          <button type="submit" disabled={creatingQuiz} className="btn-primary">
+            {creatingQuiz ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-1 h-4 w-4" />
+            )}
+            Create Quiz
+          </button>
+        </form>
       </div>
     );
   }

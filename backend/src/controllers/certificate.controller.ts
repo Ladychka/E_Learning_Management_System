@@ -24,6 +24,13 @@ export const issueCertificate = async (
     });
     if (!enrollment) throw new AppError("Enrollment not found", 404);
 
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      enrollment.course.instructorId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to issue a certificate for this course", 403);
+    }
+
     // Only completed enrollments can get certificates
     if (enrollment.status !== "completed") {
       throw new AppError("Course must be completed before issuing a certificate", 400);
@@ -118,7 +125,7 @@ export const getCertificateByNumber = async (
       where: { certificateNumber: number },
       include: {
         user: { select: { firstName: true, lastName: true } },
-        course: { select: { title: true } },
+        course: { select: { id: true, title: true } },
         enrollment: { select: { enrolledAt: true, completedAt: true } },
       },
     });

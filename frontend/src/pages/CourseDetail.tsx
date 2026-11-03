@@ -105,8 +105,12 @@ export const CourseDetail = () => {
       a: "Yes! Once all required lessons, quizzes (min 70% passing grade), and assignments are graded, an immutable certificate with a unique verification QR code is generated instantly.",
     },
     {
-      q: "Can I pay using KHQR and Bakong?",
-      a: "Absolutely. Our checkout natively supports Bakong KHQR dynamic codes for all Cambodian commercial banks (ABA, ACLEDA, Wing, Canadia, etc.) in both USD and KHR.",
+      q: "Can I pay using Cambodian banking rails (KHQR, ABA, Wing, ACLEDA)?",
+      a: "Absolutely. Our checkout natively supports Bakong KHQR dynamic codes for all Cambodian commercial banks (ABA, ACLEDA, Wing, Canadia, etc.) as well as direct card checkout in both USD and KHR.",
+    },
+    {
+      q: "Can I pay in parts / installments?",
+      a: "Yes! We offer a 0% interest Part Payment plan. You can pay 50% upfront to unlock full course access immediately, with the remaining balance scheduled in 30 days.",
     },
     {
       q: "Are the interactive financial calculators included?",
@@ -246,8 +250,12 @@ export const CourseDetail = () => {
                       <span className="text-xs font-semibold uppercase text-gray-500">USD</span>
                     </div>
                     <p className="text-xs text-emerald-700 font-medium">
-                      ≈ {priceKhr} KHR (KHQR Bakong Accepted)
+                      ≈ {priceKhr} KHR (KHQR Bakong, ABA, Wing, ACLEDA)
                     </p>
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 text-xs font-semibold border border-blue-200">
+                      <span>🪙 Or pay in 2 parts:</span>
+                      <span className="font-bold">${(priceUsd / 2).toFixed(2)}/month (0% interest)</span>
+                    </div>
                   </div>
                   <div className="flex-1 sm:max-w-xs">
                     {!isAuthenticated ? (

@@ -48,17 +48,30 @@ export const getCourses = async (
       ];
     }
 
-    // Students see only published; instructors see their own + published; admins see all
-    if (req.user?.role === "STUDENT") {
+    // Anonymous visitors and students see only published courses; instructors
+    // see their own courses plus published ones; admins see everything.
+    if (!req.user || req.user.role === "STUDENT") {
       where.status = "PUBLISHED";
-    } else if (req.user?.role === "INSTRUCTOR") {
-      if (!instructorId) {
-        where.OR = [
-          { status: "PUBLISHED" },
-          { instructorId: req.user.id },
+    } else if (req.user.role === "INSTRUCTOR") {
+      if (instructorId && instructorId !== req.user.id) {
+        // Cannot inspect another instructor's unpublished courses.
+        where.status = "PUBLISHED";
+      } else if (!instructorId) {
+        where.AND = [
+          ...((where.AND as unknown[]) || []),
+          {
+            OR: [
+              { status: "PUBLISHED" },
+              { instructorId: req.user.id },
+            ],
+          },
         ];
       }
     }
+
+    const allowedSortFields = ["createdAt", "updatedAt", "title", "price", "publishedAt"];
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+    const sortOrder = order === "asc" ? "asc" : "desc";
 
     const [courses, total] = await Promise.all([
       prisma.course.findMany({
@@ -75,7 +88,7 @@ export const getCourses = async (
           category: { select: { id: true, name: true, slug: true } },
           _count: { select: { enrollments: true, modules: true } },
         },
-        orderBy: { [sortBy]: order },
+        orderBy: { [sortField]: sortOrder },
         skip,
         take: limitNum,
       }),
@@ -141,12 +154,58 @@ export const getCourseById = async (
 
     if (!course) throw new AppError("Course not found", 404);
 
-    // Students can only see published courses
-    if (course.status !== "PUBLISHED" && req.user?.role === "STUDENT") {
+    // Unpublished courses are only visible to the owning instructor or an admin.
+    const isOwner = req.user?.id === course.instructor.id;
+    if (course.status !== "PUBLISHED" && req.user?.role !== "ADMIN" && !isOwner) {
       throw new AppError("Course not found", 404);
     }
 
-    res.json({ success: true, data: course });
+    const lessonIds = course.modules.flatMap((module) =>
+      module.lessons.map((lesson) => lesson.id)
+    );
+    let completedLessonIds = new Set<string>();
+
+    if (req.user && lessonIds.length > 0) {
+      const completions = await prisma.lessonCompletion.findMany({
+        where: {
+          userId: req.user.id,
+          courseId: course.id,
+          lessonId: { in: lessonIds },
+        },
+        select: { lessonId: true },
+      });
+      completedLessonIds = new Set(
+        completions.map((completion) => completion.lessonId)
+      );
+    }
+
+    const modules = course.modules.map((module) => ({
+      ...module,
+      lessons: module.lessons.map((lesson) => ({
+        ...lesson,
+        isCompleted: completedLessonIds.has(lesson.id),
+      })),
+    }));
+
+    const totalLessons = lessonIds.length;
+    const completedLessons = completedLessonIds.size;
+    const progressPercent =
+      totalLessons > 0
+        ? Math.min(100, Math.round((completedLessons / totalLessons) * 100))
+        : 0;
+
+    res.json({
+      success: true,
+      data: {
+        ...course,
+        modules,
+        progress: {
+          completedLessons,
+          totalLessons,
+          progressPercent,
+        },
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -173,11 +232,16 @@ export const createCourse = async (
       learningOutcomes,
       tags,
       scheduledAt,
+      status,
+      thumbnailUrl,
     } = req.body;
 
     const slug = slugify(title);
     const existingSlug = await prisma.course.findUnique({ where: { slug } });
     const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
+    const finalStatus = ["DRAFT", "PUBLISHED", "ARCHIVED"].includes(status)
+      ? status
+      : "DRAFT";
 
     const course = await prisma.course.create({
       data: {
@@ -185,9 +249,10 @@ export const createCourse = async (
         slug: finalSlug,
         description,
         shortDesc,
+        thumbnailUrl: thumbnailUrl || null,
         categoryId,
         level,
-        price: price ? parseFloat(price.toFixed(2)) : null,
+        price: price !== undefined && price !== null ? Number(price) : null,
         currency: currency || "USD",
         isFree: isFree || false,
         duration,
@@ -196,6 +261,8 @@ export const createCourse = async (
         learningOutcomes: learningOutcomes || [],
         tags: tags || [],
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        status: finalStatus,
+        publishedAt: finalStatus === "PUBLISHED" ? new Date() : null,
         instructorId: req.user!.id,
       },
       include: {
@@ -255,8 +322,11 @@ export const updateCourse = async (
     if (body.shortDesc !== undefined) updateData.shortDesc = body.shortDesc;
     if (body.categoryId !== undefined) updateData.categoryId = body.categoryId || null;
     if (body.level !== undefined) updateData.level = body.level;
-    if (body.price !== undefined) updateData.price = BigInt(Math.round(body.price * 100)) / BigInt(100);
+    if (body.price !== undefined) {
+      updateData.price = body.price === null ? null : Number(body.price);
+    }
     if (body.currency !== undefined) updateData.currency = body.currency;
+    if (body.thumbnailUrl !== undefined) updateData.thumbnailUrl = body.thumbnailUrl || null;
     if (body.isFree !== undefined) updateData.isFree = body.isFree;
     if (body.duration !== undefined) updateData.duration = body.duration;
     if (body.language !== undefined) updateData.language = body.language;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, authorize } from "../middleware/auth";
+import { authenticate, authorize, optionalAuthenticate } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import {
   createCourseSchema,
@@ -16,8 +16,8 @@ import {
 
 const router = Router();
 
-router.get("/", validate(courseQuerySchema), getCourses);
-router.get("/:id", getCourseById);
+router.get("/", optionalAuthenticate, validate(courseQuerySchema), getCourses);
+router.get("/:id", optionalAuthenticate, getCourseById);
 router.post(
   "/",
   authenticate,

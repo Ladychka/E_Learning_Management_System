@@ -20,7 +20,9 @@ import { LessonPlayer } from "@/pages/LessonPlayer";
 import { MyEnrollments } from "@/pages/MyEnrollments";
 import { MyGrades } from "@/pages/MyGrades";
 import { Gradebook } from "@/pages/Admin/Gradebook";
+import { GradeDetail } from "@/pages/GradeDetail";
 import { Checkout } from "@/pages/Checkout";
+import { PaymentQR } from "@/pages/PaymentQR";
 import { PaymentHistory } from "@/pages/PaymentHistory";
 import { PaymentDetail } from "@/pages/PaymentDetail";
 import { Invoice } from "@/pages/Invoice";
@@ -170,10 +172,26 @@ function App() {
             }
           />
           <Route
+            path="/grades/:id"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "INSTRUCTOR", "STUDENT"]}>
+                <GradeDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/checkout/:courseId"
             element={
               <ProtectedRoute>
                 <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout/:courseId/qr/:paymentId"
+            element={
+              <ProtectedRoute>
+                <PaymentQR />
               </ProtectedRoute>
             }
           />

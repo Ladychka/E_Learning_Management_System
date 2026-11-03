@@ -73,11 +73,17 @@ export async function getCourseCompletionStats(req: Request, res: Response): Pro
  */
 export async function getStudentProgressReport(req: Request, res: Response): Promise<void> {
   try {
+    const user = (req as any).user;
     const { studentId, courseId } = req.query;
 
     const where: any = {};
     if (studentId) where.userId = studentId as string;
     if (courseId) where.courseId = courseId as string;
+    if (user?.role === "INSTRUCTOR") {
+      where.course = courseId
+        ? { id: courseId as string, instructorId: user.id }
+        : { instructorId: user.id };
+    }
 
     const enrollments = await prisma.enrollment.findMany({
       where,
@@ -126,7 +132,21 @@ export async function getStudentProgressReport(req: Request, res: Response): Pro
  */
 export async function getAssessmentPerformance(req: Request, res: Response): Promise<void> {
   try {
+    const user = (req as any).user;
     const { courseId } = req.params;
+
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { instructorId: true },
+    });
+    if (!course) {
+      res.status(404).json({ message: "Course not found" });
+      return;
+    }
+    if (user?.role === "INSTRUCTOR" && course.instructorId !== user.id) {
+      res.status(403).json({ message: "Not authorized to view this course" });
+      return;
+    }
 
     // Get quizzes
     const quizzes = await prisma.quiz.findMany({
@@ -225,11 +245,17 @@ export async function getAssessmentPerformance(req: Request, res: Response): Pro
  */
 export async function getQuizItemAnalysis(req: Request, res: Response): Promise<void> {
   try {
+    const user = (req as any).user;
     const { quizId } = req.params;
 
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
+        lesson: {
+          select: {
+            module: { select: { course: { select: { instructorId: true } } } },
+          },
+        },
         questions: {
           include: {
             answers: true,
@@ -241,6 +267,13 @@ export async function getQuizItemAnalysis(req: Request, res: Response): Promise<
 
     if (!quiz) {
       res.status(404).json({ message: "Quiz not found" });
+      return;
+    }
+    if (
+      user?.role === "INSTRUCTOR" &&
+      quiz.lesson.module.course.instructorId !== user.id
+    ) {
+      res.status(403).json({ message: "Not authorized to view this quiz" });
       return;
     }
 
@@ -289,7 +322,7 @@ export async function getRevenueAnalytics(req: Request, res: Response): Promise<
     if (endDate) dateFilter.lte = new Date(endDate as string);
 
     const where: any = {
-      status: "paid",
+      status: { in: ["paid", "completed"] },
     };
     if (Object.keys(dateFilter).length > 0) {
       where.paidAt = dateFilter;
@@ -360,9 +393,16 @@ export async function getRevenueAnalytics(req: Request, res: Response): Promise<
 export async function exportReportCsv(req: Request, res: Response): Promise<void> {
   try {
     const { type } = req.params;
+    const user = (req as any).user;
 
     if (type === "completion") {
+      const courseWhere: any = {};
+      if (user?.role === "INSTRUCTOR") {
+        courseWhere.instructorId = user.id;
+      }
+
       const courses = await prisma.course.findMany({
+        where: courseWhere,
         select: {
           title: true,
           enrollments: {
@@ -371,23 +411,33 @@ export async function exportReportCsv(req: Request, res: Response): Promise<void
         },
       });
 
-      let csv = "Course Title,Total Enrollments,Completed,Completion Rate (%)\n";
+      let csv = "\uFEFFCourse Title,Total Enrollments,Active,Completed,Avg Progress (%),Completion Rate (%)\n";
       courses.forEach((c) => {
         const total = c.enrollments.length;
         const completed = c.enrollments.filter((e) => e.status === "completed" || e.progressPercent === 100).length;
+        const active = c.enrollments.filter((e) => e.status === "active").length;
+        const totalProgress = c.enrollments.reduce((acc, curr) => acc + (curr.progressPercent || 0), 0);
+        const avgProgress = total > 0 ? Math.round(totalProgress / total) : 0;
         const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
-        csv += `"${c.title.replace(/"/g, '""')}",${total},${completed},${rate}%\n`;
+        csv += `"${(c.title || "").replace(/"/g, '""')}",${total},${active},${completed},${avgProgress}%,${rate}%\n`;
       });
 
-      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader("Content-Disposition", 'attachment; filename="course_completion_report.csv"');
       res.send(csv);
       return;
     }
 
     if (type === "revenue") {
+      const where: any = {
+        status: { in: ["paid", "completed"] },
+      };
+      if (user?.role === "INSTRUCTOR") {
+        where.course = { instructorId: user.id };
+      }
+
       const payments = await prisma.payment.findMany({
-        where: { status: "paid" },
+        where,
         include: {
           user: { select: { firstName: true, lastName: true, email: true } },
           course: { select: { title: true } },
@@ -395,22 +445,54 @@ export async function exportReportCsv(req: Request, res: Response): Promise<void
         orderBy: { paidAt: "desc" },
       });
 
-      let csv = "Payment ID,Date,Learner Name,Learner Email,Course,Amount,Currency,Gateway\n";
+      let csv = "\uFEFFPayment ID,Date,Learner Name,Learner Email,Course,Amount,Currency,Gateway\n";
       payments.forEach((p) => {
         const learner = p.user ? `${p.user.firstName} ${p.user.lastName}` : "Unknown";
         const email = p.user ? p.user.email : "";
         const course = p.course ? p.course.title : "Direct";
         const date = p.paidAt ? p.paidAt.toISOString().slice(0, 10) : "";
-        csv += `"${p.id}","${date}","${learner}","${email}","${course.replace(/"/g, '""')}",${p.amount},${p.currency},${p.gateway}\n`;
+        csv += `"${p.id}","${date}","${learner.replace(/"/g, '""')}","${email}","${course.replace(/"/g, '""')}",${p.amount},${p.currency},${p.gateway}\n`;
       });
 
-      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader("Content-Disposition", 'attachment; filename="revenue_report.csv"');
       res.send(csv);
       return;
     }
 
-    res.status(400).json({ message: `Export type '${type}' not supported. Choose 'completion' or 'revenue'.` });
+    if (type === "students") {
+      const where: any = {};
+      if (user?.role === "INSTRUCTOR") {
+        where.course = { instructorId: user.id };
+      }
+
+      const enrollments = await prisma.enrollment.findMany({
+        where,
+        include: {
+          user: { select: { firstName: true, lastName: true, email: true } },
+          course: { select: { title: true } },
+          certificates: { select: { certificateNumber: true } },
+        },
+        orderBy: { enrolledAt: "desc" },
+      });
+
+      let csv = "\uFEFFStudent Name,Student Email,Course,Status,Progress (%),Enrolled Date,Certificate\n";
+      enrollments.forEach((e) => {
+        const studentName = e.user ? `${e.user.firstName} ${e.user.lastName}` : "Unknown";
+        const email = e.user ? e.user.email : "";
+        const course = e.course ? e.course.title : "";
+        const enrolledDate = e.enrolledAt ? e.enrolledAt.toISOString().slice(0, 10) : "";
+        const cert = e.certificates?.[0]?.certificateNumber || "None";
+        csv += `"${studentName.replace(/"/g, '""')}","${email}","${course.replace(/"/g, '""')}","${e.status}",${e.progressPercent}%,"${enrolledDate}","${cert}"\n`;
+      });
+
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="student_progress_report.csv"');
+      res.send(csv);
+      return;
+    }
+
+    res.status(400).json({ message: `Export type '${type}' not supported. Choose 'completion', 'revenue', or 'students'.` });
   } catch (err: any) {
     res.status(500).json({ message: "Failed to export report", error: err.message });
   }

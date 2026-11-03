@@ -116,7 +116,9 @@ app.use(
     }
     next();
   },
-  express.static("uploads")
+  express.static("uploads"),
+  // Static assets shipped with the app (e.g. payment QR codes)
+  express.static("assets")
 );
 
 // Logging

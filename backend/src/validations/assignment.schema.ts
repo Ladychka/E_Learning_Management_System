@@ -24,7 +24,19 @@ export const updateAssignmentSchema = z.object({
 
 export const submitAssignmentSchema = z.object({
   content: z.string().optional(),
-  fileUrls: z.array(z.string().url()).optional(),
+  // Uploaded files are returned as relative /uploads/... paths, so both
+  // absolute URLs and safe relative upload paths are accepted here.
+  fileUrls: z
+    .array(
+      z
+        .string()
+        .min(1)
+        .refine(
+          (value) => value.startsWith("/uploads/") || /^https?:\/\//i.test(value),
+          "Invalid file URL"
+        )
+    )
+    .optional(),
 });
 
 export const gradeSubmissionSchema = z.object({

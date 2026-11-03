@@ -184,12 +184,18 @@ export const CertificateView = () => {
 
           <div>
             <p className="text-xs text-slate-500">For successfully mastering the specialized coursework in</p>
-            <Link
-              to={`/courses/${certificate.course.id}`}
-              className="mt-1 block text-lg sm:text-xl font-bold text-emerald-800 hover:underline"
-            >
-              {certificate.course.title}
-            </Link>
+            {certificate.course.id ? (
+              <Link
+                to={`/courses/${certificate.course.id}`}
+                className="mt-1 block text-lg sm:text-xl font-bold text-emerald-800 hover:underline"
+              >
+                {certificate.course.title}
+              </Link>
+            ) : (
+              <p className="mt-1 block text-lg sm:text-xl font-bold text-emerald-800">
+                {certificate.course.title}
+              </p>
+            )}
           </div>
 
           {/* Details & Verification Grid */}

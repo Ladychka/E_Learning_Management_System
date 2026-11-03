@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { paymentApi } from "@/lib/api";
+import acledaLogo from "@/assets/acleda-logo.png";
 
 interface InvoiceData {
   invoiceNumber: string;
@@ -38,6 +39,15 @@ interface InvoiceData {
     paidAt?: string;
   };
   status: string;
+  paymentPlan?: string;
+  installmentSchedule?: {
+    installmentIndex: number;
+    totalInstallments: number;
+    fullCoursePrice: number | string;
+    amountPaid: number | string;
+    remainingAmount: number | string;
+    nextDueDate: string | null;
+  } | null;
 }
 
 export function Invoice() {
@@ -105,11 +115,16 @@ export function Invoice() {
   }
 
   const NBC_RATE = 4100;
-  const totalUsd = parseFloat(String(invoice.total || 0));
-  const subtotalUsd = parseFloat(String(invoice.subtotal || 0));
-  const discountUsd = parseFloat(String(invoice.discount || 0));
-  const totalKhr = Math.round(totalUsd * NBC_RATE);
-  const subtotalKhr = Math.round(subtotalUsd * NBC_RATE);
+  const invoiceCurrency = String(invoice.currency || "USD").toUpperCase();
+  const totalRaw = parseFloat(String(invoice.total || 0));
+  const subtotalRaw = parseFloat(String(invoice.subtotal || 0));
+  const discountRaw = parseFloat(String(invoice.discount || 0));
+  const isKhrInvoice = invoiceCurrency === "KHR";
+  const totalUsd = isKhrInvoice ? totalRaw / NBC_RATE : totalRaw;
+  const subtotalUsd = isKhrInvoice ? subtotalRaw / NBC_RATE : subtotalRaw;
+  const discountUsd = isKhrInvoice ? discountRaw / NBC_RATE : discountRaw;
+  const totalKhr = Math.round(isKhrInvoice ? totalRaw : totalUsd * NBC_RATE);
+  const subtotalKhr = Math.round(isKhrInvoice ? subtotalRaw : subtotalUsd * NBC_RATE);
 
   const isPaid = invoice.status === "completed";
   const verificationQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
@@ -191,6 +206,12 @@ export function Invoice() {
             <p className="font-mono text-sm font-bold text-slate-200 mt-2">
               {invoice.invoiceNumber}
             </p>
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#163865] px-2.5 py-1 ring-1 ring-white/10">
+              <img src={acledaLogo} alt="ACLEDA Bank" className="h-4 w-4 object-contain" />
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-white">
+                ACLEDA Bank KHQR
+              </span>
+            </div>
           </div>
         </div>
 
@@ -305,6 +326,40 @@ export function Invoice() {
             </table>
           </div>
         </div>
+
+        {/* Part Payment / Installment Schedule Card (if applicable) */}
+        {invoice.installmentSchedule && (
+          <div className="mx-6 sm:mx-8 mt-4 p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-blue-900 space-y-2">
+            <div className="flex items-center justify-between font-bold">
+              <span className="flex items-center gap-1.5 text-blue-900">
+                <span>🪙 Part Payment Schedule</span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-200/80 text-blue-800 text-[10px]">
+                  Installment {invoice.installmentSchedule.installmentIndex} of {invoice.installmentSchedule.totalInstallments}
+                </span>
+              </span>
+              <span className="text-emerald-700 font-extrabold text-[11px]">0% Interest Financing</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+              <div className="p-2 rounded-lg bg-white border border-blue-100">
+                <span className="text-[10px] text-slate-400 uppercase block font-sans">Full Course Price</span>
+                <span className="font-bold text-slate-800">${parseFloat(String(invoice.installmentSchedule.fullCoursePrice)).toFixed(2)} USD</span>
+              </div>
+              <div className="p-2 rounded-lg bg-white border border-blue-100">
+                <span className="text-[10px] text-emerald-600 uppercase block font-sans font-bold">Amount Paid (Today)</span>
+                <span className="font-bold text-emerald-700">${parseFloat(String(invoice.installmentSchedule.amountPaid)).toFixed(2)} USD</span>
+              </div>
+              <div className="p-2 rounded-lg bg-white border border-blue-100">
+                <span className="text-[10px] text-blue-600 uppercase block font-sans font-bold">Remaining Balance</span>
+                <span className="font-bold text-blue-800">${parseFloat(String(invoice.installmentSchedule.remainingAmount)).toFixed(2)} USD</span>
+              </div>
+            </div>
+            {invoice.installmentSchedule.nextDueDate && (
+              <p className="text-[11px] text-slate-600 pt-0.5">
+                Next scheduled installment due date: <span className="font-semibold text-slate-800">{new Date(invoice.installmentSchedule.nextDueDate).toLocaleDateString()}</span>
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Financial Summary & QR Verification Grid */}
         <div className="p-6 sm:p-8 grid sm:grid-cols-12 gap-8 items-start">

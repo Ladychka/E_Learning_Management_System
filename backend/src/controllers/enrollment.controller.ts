@@ -92,6 +92,10 @@ export const adminEnroll = async (
     const course = await prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new AppError("Course not found", 404);
 
+    if (req.user?.role === "INSTRUCTOR" && course.instructorId !== req.user.id) {
+      throw new AppError("Not authorized to enroll students in this course", 403);
+    }
+
     const targetUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!targetUser) throw new AppError("User not found", 404);
 
@@ -157,8 +161,15 @@ export const updateEnrollment = async (
     const { id } = req.params;
     const { status, progressPercent, expiresAt } = req.body;
 
-    const existing = await prisma.enrollment.findUnique({ where: { id } });
+    const existing = await prisma.enrollment.findUnique({
+      where: { id },
+      include: { course: { select: { instructorId: true } } },
+    });
     if (!existing) throw new AppError("Enrollment not found", 404);
+
+    if (req.user?.role === "INSTRUCTOR" && existing.course.instructorId !== req.user.id) {
+      throw new AppError("Not authorized to update this enrollment", 403);
+    }
 
     const updateData: Record<string, unknown> = {};
     if (status !== undefined) updateData.status = status;
@@ -213,6 +224,12 @@ export const unenroll = async (
     if (
       req.user?.role === "STUDENT" &&
       existing.userId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to unenroll this user", 403);
+    }
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      existing.course.instructorId !== req.user.id
     ) {
       throw new AppError("Not authorized to unenroll this user", 403);
     }
@@ -355,6 +372,7 @@ export const getEnrollmentById = async (
             id: true,
             title: true,
             thumbnailUrl: true,
+            instructorId: true,
             instructor: { select: { firstName: true, lastName: true } },
           },
         },
@@ -365,6 +383,12 @@ export const getEnrollmentById = async (
 
     // Students can only view their own enrollment
     if (req.user?.role === "STUDENT" && enrollment.userId !== req.user.id) {
+      throw new AppError("Not authorized to view this enrollment", 403);
+    }
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      enrollment.course.instructorId !== req.user.id
+    ) {
       throw new AppError("Not authorized to view this enrollment", 403);
     }
 
@@ -384,6 +408,10 @@ export const bulkEnroll = async (
 
     const course = await prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new AppError("Course not found", 404);
+
+    if (req.user?.role === "INSTRUCTOR" && course.instructorId !== req.user.id) {
+      throw new AppError("Not authorized to bulk enroll in this course", 403);
+    }
 
     const results = await prisma.$transaction(async (tx) => {
       const created: unknown[] = [];

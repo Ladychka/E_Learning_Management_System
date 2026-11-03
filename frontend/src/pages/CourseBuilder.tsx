@@ -70,6 +70,7 @@ function SortableModuleRow({
   onEdit,
   onDelete,
   onAddLesson,
+  onTogglePublish,
   children,
 }: {
   mod: ModuleItem;
@@ -78,6 +79,7 @@ function SortableModuleRow({
   onEdit: () => void;
   onDelete: () => void;
   onAddLesson: () => void;
+  onTogglePublish: () => void;
   children?: React.ReactNode;
 }) {
   const {
@@ -113,11 +115,19 @@ function SortableModuleRow({
           <GripVertical className="h-4 w-4" />
         </button>
         <span className="flex-1 font-semibold">{mod.title}</span>
-        {mod.isPublished ? (
-          <CheckCircle className="h-4 w-4 text-green-500" />
-        ) : (
-          <EyeOff className="h-4 w-4 text-gray-400" />
-        )}
+        <button
+          onClick={onTogglePublish}
+          className={`rounded p-1 ${
+            mod.isPublished ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"
+          }`}
+          title={mod.isPublished ? "Unpublish module" : "Publish module"}
+        >
+          {mod.isPublished ? (
+            <CheckCircle className="h-4 w-4" />
+          ) : (
+            <EyeOff className="h-4 w-4" />
+          )}
+        </button>
         <button
           onClick={onAddLesson}
           className="rounded p-1 text-gray-500 hover:bg-gray-200"
@@ -149,12 +159,14 @@ function SortableLessonRow({
   lesson,
   moduleId,
   onTogglePreview,
+  onTogglePublish,
   onEdit,
   onDelete,
 }: {
   lesson: LessonItem;
   moduleId: string;
   onTogglePreview: () => void;
+  onTogglePublish: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -221,6 +233,19 @@ function SortableLessonRow({
           <HelpCircle className="h-4 w-4" />
         </Link>
       )}
+      <button
+        onClick={onTogglePublish}
+        className={`rounded p-1 ${
+          lesson.isPublished ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"
+        }`}
+        title={lesson.isPublished ? "Unpublish lesson" : "Publish lesson"}
+      >
+        {lesson.isPublished ? (
+          <CheckCircle className="h-4 w-4" />
+        ) : (
+          <EyeOff className="h-4 w-4" />
+        )}
+      </button>
       <button
         onClick={onTogglePreview}
         className={`rounded p-1 ${lesson.isPreview ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"}`}
@@ -426,6 +451,27 @@ export const CourseBuilder = () => {
       fetchData();
     } catch {
       toast.error("Failed to delete lesson");
+    }
+  };
+
+  const handleToggleModulePublish = async (mod: ModuleItem) => {
+    if (!courseId) return;
+    try {
+      await moduleApi.updateModule(courseId, mod.id, { isPublished: !mod.isPublished });
+      toast.success(mod.isPublished ? "Module unpublished" : "Module published");
+      fetchData();
+    } catch {
+      toast.error("Failed to update module publishing");
+    }
+  };
+
+  const handleToggleLessonPublish = async (lesson: LessonItem) => {
+    try {
+      await lessonApi.updateLesson(lesson.id, { isPublished: !lesson.isPublished });
+      toast.success(lesson.isPublished ? "Lesson unpublished" : "Lesson published");
+      fetchData();
+    } catch {
+      toast.error("Failed to update lesson publishing");
     }
   };
 
@@ -763,6 +809,7 @@ export const CourseBuilder = () => {
                   onToggle={() => toggleModule(mod.id)}
                   onEdit={() => handleEditModule(mod)}
                   onDelete={() => handleDeleteModule(mod.id)}
+                  onTogglePublish={() => handleToggleModulePublish(mod)}
                   onAddLesson={() => {
                     setActiveModuleId(mod.id);
                     setEditingLessonId(null);
@@ -796,6 +843,7 @@ export const CourseBuilder = () => {
                             lesson={lesson}
                             moduleId={mod.id}
                             onTogglePreview={() => handleTogglePreview(lesson)}
+                            onTogglePublish={() => handleToggleLessonPublish(lesson)}
                             onEdit={() => handleEditLesson(lesson, mod.id)}
                             onDelete={() => handleDeleteLesson(lesson.id)}
                           />

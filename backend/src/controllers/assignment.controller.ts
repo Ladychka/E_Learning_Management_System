@@ -79,6 +79,9 @@ export const getAssignments = async (
     // Students only see published assignments
     if (req.user?.role === "STUDENT") {
       where.isPublished = true;
+    } else if (req.user?.role === "INSTRUCTOR") {
+      // Instructors only see assignments in their own courses.
+      where.course = { instructorId: req.user.id };
     }
 
     const [assignments, total] = await Promise.all([
@@ -122,6 +125,10 @@ export const getAssignmentById = async (
         submissions: req.user?.role === "STUDENT"
           ? { where: { studentId: req.user.id } }
           : true,
+        grades:
+          req.user?.role === "STUDENT"
+            ? { where: { studentId: req.user.id } }
+            : true,
       },
     });
 
@@ -130,8 +137,31 @@ export const getAssignmentById = async (
     if (req.user?.role === "STUDENT" && !assignment.isPublished) {
       throw new AppError("Assignment not found", 404);
     }
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      assignment.course.instructorId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to view this assignment", 403);
+    }
 
-    res.json({ success: true, data: assignment });
+    // Attach the matching grade to each submission so the UI can show the
+    // score/feedback without a separate lookup.
+    const grades = assignment.grades || [];
+    const data = {
+      ...assignment,
+      grades: undefined,
+      submissions: assignment.submissions.map((submission) => ({
+        ...submission,
+        grade:
+          grades.find(
+            (grade) =>
+              grade.studentId === submission.studentId &&
+              grade.assignmentId === assignment.id
+          ) || null,
+      })),
+    };
+
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -316,15 +346,20 @@ export const getSubmissions = async (
   next: NextFunction
 ) => {
   try {
-    const { assignmentId } = req.query as Record<string, string>;
+    const { id } = req.params;
+    const { assignmentId: queryAssignmentId } = req.query as Record<string, string>;
+    const assignmentId = id || queryAssignmentId;
 
-    const where: Record<string, unknown> = {};
-    if (assignmentId) where.assignmentId = assignmentId;
+    if (!assignmentId) {
+      throw new AppError("Assignment id is required", 400);
+    }
+
+    const where: Record<string, unknown> = { assignmentId };
 
     // Students only see their own submissions
     if (req.user?.role === "STUDENT") {
       where.studentId = req.user.id;
-    } else if (req.user?.role === "INSTRUCTOR" && assignmentId) {
+    } else if (req.user?.role === "INSTRUCTOR") {
       // Verify instructor owns the assignment's course
       const assignment = await prisma.assignment.findUnique({
         where: { id: assignmentId },

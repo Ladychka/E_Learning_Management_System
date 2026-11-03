@@ -55,7 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     try {
-      await authApi.logout();
+      const refreshToken = localStorage.getItem("refreshToken");
+      await authApi.logout(refreshToken || undefined);
     } catch {
       // ignore
     }

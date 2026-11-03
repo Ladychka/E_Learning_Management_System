@@ -171,7 +171,7 @@ export const CourseSettings = () => {
         description: form.description || undefined,
         shortDesc: form.shortDesc || undefined,
         status: form.status,
-        price: form.isFree ? undefined : parseFloat(form.price || "0"),
+        price: form.isFree ? 0 : parseFloat(form.price || "0"),
         currency: form.currency,
         isFree: form.isFree,
         level: form.level,
@@ -186,7 +186,9 @@ export const CourseSettings = () => {
         tags: form.tags
           ? form.tags.split(",").map((s) => s.trim()).filter(Boolean)
           : [],
-        scheduledAt: form.scheduledAt || undefined,
+        scheduledAt: form.scheduledAt
+          ? new Date(form.scheduledAt).toISOString()
+          : undefined,
         thumbnailUrl: form.thumbnailUrl || undefined,
       };
       await courseApi.updateCourse(courseId, payload);

@@ -12,8 +12,24 @@ This document outlines the architecture, standards, and workflow for payment pro
    - Dual currency support: **USD** and **KHR** (Cambodian Riel).
 2. **ABA PayWay Gateway:**
    - Redirect / webview integration for ABA Mobile users and Visa/Mastercard credit/debit card processing.
-3. **Bakong Wallet Deeplink:**
+3. **Wing Bank & WingPay:**
+   - Instant mobile QR scan, Wing account balance, and USSD integration with 0% transaction fee.
+4. **ACLEDA ToanChet:**
+   - Direct integration with Cambodia's largest national retail commercial banking network.
+5. **Bakong Wallet Deeplink:**
    - Instant mobile-to-mobile app switching to the Bakong application.
+6. **Credit / Debit Cards (PCI-DSS):**
+   - Global card payments via 3D-Secure (Visa, Mastercard, JCB, UnionPay).
+
+---
+
+## 1.1 Part Payment Method (Fintech Student Financing)
+
+To promote financial inclusion and ease educational cost barriers, ELMS supports **0% Interest Part Payments (Installments)**:
+- **Structure:** 2 Parts (50% upfront deposit + 50% balance in 30 days) or 3 Parts (33.3% / month).
+- **Instant Activation:** Paying Part 1 instantly activates course enrollment, granting complete access to lessons, quizzes, and financial models.
+- **Dual Currency:** Available in both USD and KHR at the official NBC 4,100 rate.
+- **Transparent Invoicing:** Digital invoices clearly distinguish between Full Payment and Part Payment installments with remaining balance and scheduled due date.
 
 ---
 

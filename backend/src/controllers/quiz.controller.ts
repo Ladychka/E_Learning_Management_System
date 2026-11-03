@@ -41,6 +41,7 @@ export const getQuizByLesson = async (
             type: true,
             question: true,
             options: true,
+            correctAnswer: true,
             points: true,
             sortOrder: true,
           },
@@ -62,6 +63,11 @@ export const getQuizByLesson = async (
     // Students can only see published quiz content
     if (req.user?.role === "STUDENT" && !quiz.isPublished) {
       throw new AppError("Quiz not found", 404);
+    }
+
+    // Never leak answer keys to students; instructors need them to edit quizzes.
+    if (req.user?.role === "STUDENT") {
+      quiz.questions = quiz.questions.map(({ correctAnswer: _correctAnswer, ...q }) => q) as typeof quiz.questions;
     }
 
     res.json({ success: true, data: quiz });

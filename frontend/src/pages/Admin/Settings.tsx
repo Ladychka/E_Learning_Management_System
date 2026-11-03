@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { settingApi, backupApi } from "../../lib/api";
-import { Settings as SettingsIcon, Save, Database, Download, CheckCircle, AlertCircle, ShieldAlert } from "lucide-react";
+import { Settings as SettingsIcon, Save, Database, Download, CheckCircle, AlertCircle, ShieldAlert, Loader2 } from "lucide-react";
 
 export const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"branding" | "platform" | "backup">("branding");
@@ -16,11 +16,32 @@ export const Settings: React.FC = () => {
   // Backup state
   const [backupStatus, setBackupStatus] = useState<any>(null);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [backupExporting, setBackupExporting] = useState(false);
 
   useEffect(() => {
     fetchSettings();
     fetchBackupStatus();
   }, []);
+
+  const handleExportBackup = async () => {
+    try {
+      setBackupExporting(true);
+      const res = await backupApi.exportBackup();
+      const blob = new Blob([res.data], { type: "application/json" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `elms-backup-${Date.now()}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Backup export failed:", err);
+    } finally {
+      setBackupExporting(false);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -240,15 +261,19 @@ export const Settings: React.FC = () => {
                 US-094 & US-095: On-demand snapshot creation and automated schedule inspection.
               </p>
             </div>
-            <a
-              href={backupApi.getBackupExportUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
+            <button
+              type="button"
+              onClick={handleExportBackup}
+              disabled={backupExporting}
+              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed transition-colors"
             >
-              <Download className="w-4 h-4 mr-2" />
-              Download JSON Backup
-            </a>
+              {backupExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              {backupExporting ? "Exporting..." : "Download JSON Backup"}
+            </button>
           </div>
 
           {backupLoading ? (

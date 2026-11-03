@@ -95,7 +95,7 @@ export const AdminCourses = () => {
     try {
       const payload: Record<string, unknown> = {
         ...form,
-        price: form.isFree ? undefined : parseFloat(form.price),
+        price: form.isFree ? 0 : parseFloat(form.price || "0"),
         duration: form.duration ? parseInt(form.duration) : undefined,
       };
       if (!form.categoryId) {
@@ -115,18 +115,27 @@ export const AdminCourses = () => {
     }
   };
 
-  const handleEdit = (course: CourseItem) => {
+  const handleEdit = async (course: CourseItem) => {
     setEditingId(course.id);
+    // The list response omits some fields; load the full course so editing
+    // never overwrites the existing description/category with blanks.
+    let detail: any = course;
+    try {
+      const res = await courseApi.getCourse(course.id);
+      detail = res.data.data;
+    } catch {
+      // fall back to the list row
+    }
     setForm({
-      title: course.title,
-      description: "",
-      shortDesc: "",
-      categoryId: "",
-      level: course.level || "BEGINNER",
-      price: course.price || "",
-      isFree: course.isFree,
-      duration: "",
-      status: course.status,
+      title: detail.title || course.title,
+      description: detail.description || "",
+      shortDesc: detail.shortDesc || "",
+      categoryId: detail.categoryId || detail.category?.id || "",
+      level: detail.level || course.level || "BEGINNER",
+      price: detail.price != null ? String(detail.price) : "",
+      isFree: Boolean(detail.isFree ?? course.isFree),
+      duration: detail.duration != null ? String(detail.duration) : "",
+      status: detail.status || course.status,
     });
     setShowForm(true);
   };

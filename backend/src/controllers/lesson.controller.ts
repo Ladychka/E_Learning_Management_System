@@ -3,6 +3,41 @@ import { prisma } from "../lib/prisma";
 import { AppError } from "../middleware/errorHandler";
 import { logAudit } from "../utils/audit";
 
+const getPublishedLessonProgress = async (userId: string, courseId: string) => {
+  const [totalLessons, completions] = await Promise.all([
+    prisma.lesson.count({
+      where: {
+        isPublished: true,
+        module: { courseId, isPublished: true },
+      },
+    }),
+    prisma.lessonCompletion.findMany({
+      where: {
+        userId,
+        courseId,
+        lesson: {
+          isPublished: true,
+          module: { courseId, isPublished: true },
+        },
+      },
+      select: { lessonId: true },
+    }),
+  ]);
+
+  const completedLessons = completions.length;
+  const progressPercent =
+    totalLessons > 0
+      ? Math.min(100, Math.round((completedLessons / totalLessons) * 100))
+      : 0;
+
+  return {
+    completedLessons,
+    totalLessons,
+    progressPercent,
+    completedLessonIds: completions.map((completion) => completion.lessonId),
+  };
+};
+
 const verifyModuleAccess = async (
   moduleId: string,
   userId: string,
@@ -155,6 +190,7 @@ export const getLessonById = async (
                   select: {
                     id: true,
                     title: true,
+                    isPublished: true,
                     lessons: {
                       orderBy: { sortOrder: "asc" },
                       select: {
@@ -221,7 +257,10 @@ export const getLessonById = async (
             },
           },
         });
-        if (!enrollment || enrollment.status !== "active") {
+        if (
+          !enrollment ||
+          (enrollment.status !== "active" && enrollment.status !== "completed")
+        ) {
           throw new AppError("You must be enrolled in this course to access this lesson", 403);
         }
 
@@ -248,7 +287,158 @@ export const getLessonById = async (
       }
     }
 
-    res.json({ success: true, data: lesson });
+    let completedLessonIds: string[] = [];
+    let courseProgress: {
+      completedLessons: number;
+      totalLessons: number;
+      progressPercent: number;
+    } | null = null;
+
+    if (req.user) {
+      const progress = await getPublishedLessonProgress(req.user.id, course.id);
+      completedLessonIds = progress.completedLessonIds;
+      courseProgress = {
+        completedLessons: progress.completedLessons,
+        totalLessons: progress.totalLessons,
+        progressPercent: progress.progressPercent,
+      };
+    }
+
+    const completedSet = new Set(completedLessonIds);
+    const modulesWithCompletion = course.modules.map((module) => ({
+      ...module,
+      lessons: module.lessons.map((item) => ({
+        ...item,
+        isCompleted: module.isPublished && item.isPublished
+          ? completedSet.has(item.id)
+          : false,
+      })),
+    }));
+
+    const data = {
+      ...lesson,
+      isCompleted: completedSet.has(lesson.id),
+      module: {
+        ...lesson.module,
+        course: { ...course, modules: modulesWithCompletion },
+      },
+      courseProgress,
+    };
+
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const completeLesson = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.id;
+
+    const lesson = await prisma.lesson.findUnique({
+      where: { id },
+      include: {
+        module: {
+          include: {
+            course: {
+              select: { id: true, status: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!lesson) throw new AppError("Lesson not found", 404);
+    const course = lesson.module.course;
+    if (!lesson.isPublished || course.status !== "PUBLISHED") {
+      throw new AppError("Lesson not found", 404);
+    }
+
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId: course.id,
+        },
+      },
+    });
+    if (
+      !enrollment ||
+      (enrollment.status !== "active" && enrollment.status !== "completed")
+    ) {
+      throw new AppError(
+        "You must be enrolled in this course to access this lesson",
+        403
+      );
+    }
+
+    if (
+      enrollment.status !== "completed" &&
+      lesson.dripDays &&
+      lesson.dripDays > 0
+    ) {
+      const unlockDate = new Date(enrollment.enrolledAt);
+      unlockDate.setDate(unlockDate.getDate() + lesson.dripDays);
+      if (new Date() < unlockDate) {
+        throw new AppError(
+          `This lesson is locked until ${unlockDate.toISOString()}. Please come back after ${lesson.dripDays} day(s) from enrollment.`,
+          403
+        );
+      }
+    }
+
+    await prisma.lessonCompletion.upsert({
+      where: {
+        userId_lessonId: { userId, lessonId: lesson.id },
+      },
+      update: {},
+      create: {
+        userId,
+        lessonId: lesson.id,
+        courseId: course.id,
+      },
+    });
+
+    const progress = await getPublishedLessonProgress(userId, course.id);
+    const updatedEnrollment = await prisma.enrollment.update({
+      where: { id: enrollment.id },
+      data: {
+        progressPercent: progress.progressPercent,
+        ...(progress.progressPercent >= 100 && enrollment.status !== "completed"
+          ? { status: "completed", completedAt: new Date() }
+          : {}),
+      },
+    });
+
+    await logAudit({
+      userId,
+      action: "COMPLETE_LESSON",
+      entity: "Lesson",
+      entityId: lesson.id,
+      newValues: {
+        courseId: course.id,
+        progressPercent: progress.progressPercent,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
+    res.json({
+      success: true,
+      data: {
+        lessonId: lesson.id,
+        isCompleted: true,
+        completedLessons: progress.completedLessons,
+        totalLessons: progress.totalLessons,
+        progressPercent: progress.progressPercent,
+        enrollment: updatedEnrollment,
+      },
+    });
   } catch (error) {
     next(error);
   }

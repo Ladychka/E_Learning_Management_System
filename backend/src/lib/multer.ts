@@ -4,7 +4,7 @@ import { AppError } from "../middleware/errorHandler";
 
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
-    const folder = req.params.folder || "documents";
+    const folder = path.basename(req.params.folder || "documents");
     const dest = path.resolve(process.cwd(), "uploads", folder);
     cb(null, dest);
   },
@@ -30,6 +30,16 @@ const fileFilter = (
       "application/zip",
     ],
     thumbnails: ["image/jpeg", "image/png", "image/webp"],
+    submissions: [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "application/zip",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ],
   };
 
   const folder = (_req as any).params?.folder || "documents";

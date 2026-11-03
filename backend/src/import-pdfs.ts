@@ -27,18 +27,18 @@ const possibleVideoSourceFiles = [
   path.resolve(VIDEOS_UPLOAD_DIR, "1785382622793-650226514.mp4"),
 ];
 
-// Map filenames to friendly titles
+// Map filenames to friendly titles with clear Chapter numbers
 const pdfFiles = [
-  { file: "FIN 202_merged.pdf", title: "FIN 202: Financial Accounting" },
-  { file: "FIN 207_merged.pdf", title: "FIN 207: Corporate Finance" },
-  { file: "FIN 310_merged.pdf", title: "FIN 310: Investment Analysis" },
-  { file: "FIN 311_merged.pdf", title: "FIN 311: Portfolio Management" },
-  { file: "FIN 312_merged.pdf", title: "FIN 312: Risk Management" },
-  { file: "FIN 406_merged.pdf", title: "FIN 406: International Finance" },
-  { file: "FIN 414_merged.pdf", title: "FIN 414: Financial Modeling" },
-  { file: "FIN 420_merged.pdf", title: "FIN 420: Derivatives & Options" },
-  { file: "FIN 422_merged (2).pdf", title: "FIN 422: Fixed Income Securities" },
-  { file: "FIN 423_merged.pdf", title: "FIN 423: Alternative Investments" },
+  { file: "FIN 202_merged.pdf", title: "Chapter 02: FIN 202 - Financial Accounting" },
+  { file: "FIN 207_merged.pdf", title: "Chapter 03: FIN 207 - Corporate Finance" },
+  { file: "FIN 310_merged.pdf", title: "Chapter 04: FIN 310 - Investment Analysis" },
+  { file: "FIN 311_merged.pdf", title: "Chapter 05: FIN 311 - Portfolio Management" },
+  { file: "FIN 312_merged.pdf", title: "Chapter 06: FIN 312 - Risk Management" },
+  { file: "FIN 406_merged.pdf", title: "Chapter 07: FIN 406 - International Finance" },
+  { file: "FIN 414_merged.pdf", title: "Chapter 08: FIN 414 - Financial Modeling" },
+  { file: "FIN 420_merged.pdf", title: "Chapter 09: FIN 420 - Derivatives & Options" },
+  { file: "FIN 422_merged (2).pdf", title: "Chapter 10: FIN 422 - Fixed Income Securities" },
+  { file: "FIN 423_merged.pdf", title: "Chapter 11: FIN 423 - Alternative Investments" },
 ];
 
 function findPdfFile(filename: string): string | null {
@@ -199,18 +199,31 @@ async function importLessons() {
     }
     const contentUrl = `/uploads/documents/${safeName}`;
 
+    const moduleTitle = `Module ${i + 2}: ${title}`;
+
     // Find or create module for this topic
     let moduleRecord = await prisma.module.findFirst({
-      where: { courseId: course.id, title: `Module ${i + 2}: ${title}` },
+      where: {
+        courseId: course.id,
+        title: moduleTitle,
+      },
     });
 
     if (!moduleRecord) {
       moduleRecord = await prisma.module.create({
         data: {
           courseId: course.id,
-          title: `Module ${i + 2}: ${title}`,
+          title: moduleTitle,
           description: `Lecture notes and comprehensive materials for ${title}.`,
           sortOrder: i + 1,
+          isPublished: true,
+        },
+      });
+    } else {
+      moduleRecord = await prisma.module.update({
+        where: { id: moduleRecord.id },
+        data: {
+          title: moduleTitle,
           isPublished: true,
         },
       });
@@ -218,7 +231,7 @@ async function importLessons() {
 
     // Find or create lesson
     const existingLesson = await prisma.lesson.findFirst({
-      where: { moduleId: moduleRecord.id, title },
+      where: { moduleId: moduleRecord.id, contentUrl },
     });
 
     if (!existingLesson) {
@@ -231,12 +244,24 @@ async function importLessons() {
           contentUrl,
           duration: 60,
           isPublished: true,
-          isPreview: i === 0,
+          isPreview: false,
           sortOrder: 0,
           attachments: [],
         },
       });
       console.log(`  📄 Lesson created: ${title} -> ${contentUrl}`);
+    } else {
+      await prisma.lesson.update({
+        where: { id: existingLesson.id },
+        data: {
+          title,
+          description: `Complete textbook & curriculum notes for ${title}`,
+          contentUrl,
+          isPublished: true,
+          isPreview: false,
+        },
+      });
+      console.log(`  🔄 Lesson updated: ${title} -> ${contentUrl}`);
     }
   }
 

@@ -1,20 +1,16 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   CreditCard,
-  Tag,
-  CheckCircle,
   AlertCircle,
-  QrCode,
-  Smartphone,
-  ExternalLink,
-  Banknote,
-  Clock,
-  RefreshCw,
   ShieldCheck,
   ArrowRight,
   Loader2,
+  Calendar,
+  Split,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 import { courseApi, paymentApi, enrollmentApi } from "@/lib/api";
 
@@ -27,36 +23,23 @@ interface Course {
   isFree: boolean;
 }
 
-type Gateway = "khqr" | "aba_payway" | "bakong";
+export type Gateway = "acleda";
+export type PaymentPlan = "full" | "installment";
+
+const NBC_EXCHANGE_RATE = 4100;
 
 export function Checkout() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
-  const [gateway, setGateway] = useState<Gateway>("khqr");
-  const [couponCode, setCouponCode] = useState("");
-  const [discount, setDiscount] = useState(0);
+  const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("full");
+  const [installmentParts, setInstallmentParts] = useState<number>(2); // 2 or 3 parts
   const [finalPrice, setFinalPrice] = useState(0);
-  const [originalPrice, setOriginalPrice] = useState(0);
   const [processing, setProcessing] = useState(false);
-  const [checkoutResult, setCheckoutResult] = useState<Record<string, any> | null>(null);
-
-  // KHQR Timer & Polling states
-  const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes (300s)
-  const [isExpired, setIsExpired] = useState<boolean>(false);
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "completed" | "failed" | "expired">("pending");
-
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (courseId) loadCourse();
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
   }, [courseId]);
 
   const loadCourse = async () => {
@@ -66,19 +49,16 @@ export function Checkout() {
       setCourse(c);
       const isFreeCourse = Boolean(c.isFree) || Number(c.price || 0) === 0;
       if (isFreeCourse) {
-        // Free course behavior: with price 0, "Enroll Now" must enroll directly and not open checkout or KHQR
         try {
           await enrollmentApi.selfEnroll(c.id || courseId!);
           toast.success("Free course enrolled successfully!");
         } catch {
-          // If already enrolled or requires login, let navigation proceed
+          // let navigation proceed
         }
         navigate(`/courses/${c.id || courseId}`);
         return;
       }
-      const price = Number(c.price || 0);
-      setOriginalPrice(price);
-      setFinalPrice(price);
+      setFinalPrice(Number(c.price || 0));
     } catch {
       toast.error("Failed to load course");
     } finally {
@@ -86,129 +66,48 @@ export function Checkout() {
     }
   };
 
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) return;
+  const handlePay = async () => {
+    if (!courseId || processing) return;
+    setProcessing(true);
     try {
-      const res = await paymentApi.validateCoupon(couponCode, courseId);
-      const data = res.data.data;
-      if (data.discountType === "percentage") {
-        const disc = Number((originalPrice * Number(data.discountValue) / 100).toFixed(2));
-        setDiscount(disc);
-        setFinalPrice(Number((originalPrice - disc).toFixed(2)));
-      } else {
-        const disc = Number(data.discountValue);
-        setDiscount(disc);
-        setFinalPrice(Math.max(0, originalPrice - disc));
-      }
-      toast.success("Coupon applied");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Invalid coupon");
-    }
-  };
-
-  const startPolling = (paymentId: string) => {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        const res = await paymentApi.getPayment(paymentId);
-        const current = res.data.data;
-        if (current.status === "completed") {
-          setPaymentStatus("completed");
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-          if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-          toast.success("Payment confirmed! Enrolled successfully.");
-        } else if (current.status === "failed") {
-          setPaymentStatus("failed");
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-        }
-      } catch {
-        // quiet poll
-      }
-    }, 3000); // Check every 3 seconds
-  };
-
-  const startCountdown = () => {
-    setTimeLeft(300);
-    setIsExpired(false);
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    timerIntervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-          setIsExpired(true);
-          setPaymentStatus("expired");
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleCheckout = async () => {
-    if (!courseId) return;
-    try {
-      setProcessing(true);
       const res = await paymentApi.checkout({
         courseId,
-        gateway,
-        couponCode: couponCode || undefined,
+        gateway: "acleda",
+        paymentPlan,
+        ...(paymentPlan === "installment" ? { installments: installmentParts } : {}),
+        currency: "USD",
       });
       const data = res.data.data;
-      setCheckoutResult(data);
 
-      if (data.status === "completed") {
-        setPaymentStatus("completed");
+      if (data.payment?.status === "completed" || data.checkout?.status === "completed") {
         toast.success("Enrolled successfully!");
-      } else {
-        setPaymentStatus("pending");
-        startCountdown();
-        startPolling(data.payment.id);
-        toast.success("QR Code generated. Please scan to complete.");
+        navigate(`/courses/${courseId}`);
+        return;
       }
+
+      if (!data?.checkout?.qrImage) {
+        toast.error(
+          data?.checkout?.note ||
+            "No ACLEDA QR code matches this exact amount. Please pay the full course price in USD."
+        );
+        return;
+      }
+
+      navigate(`/checkout/${courseId}/qr/${data.payment.id}`, {
+        state: {
+          imageUrl: data.checkout.qrImage,
+          bankName: data.checkout.bankName,
+          note: data.checkout.note,
+          amount: Number(data.payment.amount),
+          currency: data.payment.currency,
+          gatewayRef: data.payment.gatewayRef,
+          courseTitle: course?.title,
+        },
+      });
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Checkout failed");
     } finally {
       setProcessing(false);
-    }
-  };
-
-  const handleManualConfirm = async () => {
-    const paymentId = checkoutResult?.payment?.id;
-    if (!paymentId) return;
-    try {
-      setIsVerifying(true);
-      const res = await paymentApi.confirmPayment(paymentId, {
-        status: "completed",
-        gatewayRef: `SANDBOX-WEB-${Date.now()}`,
-      });
-      if (res.data.data?.status === "completed") {
-        setPaymentStatus("completed");
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-        toast.success("Payment verified and enrollment activated!");
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Verification failed");
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const formatTimer = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? "0" : ""}${s}`;
-  };
-
-  const getGatewayIcon = (g: Gateway) => {
-    switch (g) {
-      case "khqr":
-        return <QrCode className="w-5 h-5" />;
-      case "aba_payway":
-        return <CreditCard className="w-5 h-5" />;
-      case "bakong":
-        return <Smartphone className="w-5 h-5" />;
     }
   };
 
@@ -229,255 +128,287 @@ export function Checkout() {
     );
   }
 
-  const isFree = course.isFree || originalPrice === 0;
+  const isFree = course.isFree || finalPrice === 0;
+
+  // Payments are always charged in USD. Convert KHR-priced courses once for
+  // display and installment math so the same numbers are used everywhere.
+  const isKhrCourse = String(course.currency || "USD").toUpperCase() === "KHR";
+  const priceUsd = isKhrCourse ? finalPrice / NBC_EXCHANGE_RATE : finalPrice;
+  const finalPriceKhr = Math.round(
+    isKhrCourse ? finalPrice : finalPrice * NBC_EXCHANGE_RATE
+  );
+
+  // Installment calculations
+  const installmentAmountUsd = Number((priceUsd / installmentParts).toFixed(2));
+  const remainingAmountUsd = Number((priceUsd - installmentAmountUsd).toFixed(2));
+
+  // Current amount due today based on selected plan
+  const dueTodayUsd = paymentPlan === "installment" ? installmentAmountUsd : priceUsd;
+  const dueTodayKhr = Math.round(dueTodayUsd * NBC_EXCHANGE_RATE);
 
   return (
-    <div className="max-w-xl mx-auto py-8 px-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Secure Fintech Checkout</h1>
-              <p className="text-xs text-slate-500 mt-0.5">Instant enrollment via National Bank of Cambodia KHQR rails</p>
+    <div className="-mx-4 -mt-4 pb-8 lg:-mx-8 lg:-mt-8">
+      {/* Full-width hero banner */}
+      <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 px-4 py-8 text-white sm:px-6 lg:px-8 lg:py-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-300">
+                Official Bank KHQR
+              </span>
+              <span className="text-xs text-slate-300">NBC Exchange: 1 USD = 4,100 KHR</span>
             </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Encrypted
-            </div>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Fintech Course Checkout</h1>
+            <p className="max-w-2xl text-sm text-slate-300">Secure ACLEDA KHQR checkout</p>
+          </div>
+          <div className="flex items-center gap-2 self-start rounded-full border border-emerald-400/30 bg-emerald-500/20 px-4 py-2 text-xs font-semibold text-emerald-300 sm:self-auto">
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <span>256-Bit SSL</span>
           </div>
         </div>
+      </header>
 
-        <div className="p-6 space-y-6">
-          {/* Course Summary Card */}
-          <div className="flex items-start gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-            <div className="w-20 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg flex-shrink-0 overflow-hidden">
-              {course.thumbnailUrl ? (
-                <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">{course.title}</h2>
-              <div className="mt-1">
-                {isFree ? (
-                  <span className="text-emerald-600 font-bold text-sm">Free Course</span>
-                ) : (
-                  <div className="flex items-baseline gap-2">
-                    {discount > 0 && (
-                      <span className="text-slate-400 line-through text-xs">
-                        ${originalPrice.toFixed(2)} {course.currency}
-                      </span>
-                    )}
-                    <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                      ${finalPrice.toFixed(2)} {course.currency}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      (≈ {(finalPrice * 4100).toLocaleString()} ៛ KHR)
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
+          {/* Main column: payment plan only */}
+          <div className="min-w-0 space-y-6">
+            {!isFree && (
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <section className="p-5 sm:p-6">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <Split className="h-3.5 w-3.5 text-emerald-600" />
+                      Select Payment Plan
+                    </label>
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      0% Interest Financing
                     </span>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Form when checkout NOT initiated */}
-          {!isFree && !checkoutResult && (
-            <>
-              {/* Payment Gateway Selector */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Select Cambodian Payment Rail
-                </label>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {(["khqr", "aba_payway", "bakong"] as Gateway[]).map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => setGateway(g)}
-                      className={`flex flex-col items-center gap-1.5 p-3.5 rounded-xl border transition text-xs font-semibold ${
-                        gateway === g
-                          ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
-                          : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {/* Option A: Full Payment */}
+                    <div
+                      onClick={() => setPaymentPlan("full")}
+                      className={`cursor-pointer rounded-2xl border p-4 transition-all ${
+                        paymentPlan === "full"
+                          ? "border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20 dark:bg-emerald-950/30"
+                          : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800"
                       }`}
                     >
-                      {getGatewayIcon(g)}
-                      <span className="capitalize">{g.replace("_", " ")}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Coupon Code Input */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Discount Coupon
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      placeholder="e.g. WELCOME20"
-                      className="input pl-9 text-sm uppercase font-semibold"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={applyCoupon}
-                    className="btn-secondary px-4 text-xs font-semibold"
-                  >
-                    Apply
-                  </button>
-                </div>
-                {discount > 0 && (
-                  <p className="text-xs text-emerald-600 font-semibold mt-1.5">
-                    ✓ Discount applied: -${discount.toFixed(2)} {course.currency}
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Active Payment Screen (QR, Polling, Manual Confirm, or Success) */}
-          {checkoutResult ? (
-            <div className="text-center space-y-4 py-2">
-              {paymentStatus === "completed" ? (
-                <div className="p-6 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-3">
-                  <CheckCircle className="w-14 h-14 text-emerald-600 mx-auto animate-bounce" />
-                  <h3 className="text-xl font-bold text-emerald-900 dark:text-emerald-100">
-                    Payment Successfully Completed!
-                  </h3>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-300 max-w-sm mx-auto">
-                    Your enrollment has been activated. You now have full lifetime access to all lessons, quizzes, and certificates.
-                  </p>
-                  <button
-                    onClick={() => navigate(`/courses/${courseId}`)}
-                    className="btn-primary mt-2 inline-flex items-center gap-2"
-                  >
-                    Start Learning Now <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : isExpired ? (
-                <div className="p-6 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 space-y-3">
-                  <Clock className="w-12 h-12 text-amber-600 mx-auto" />
-                  <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">
-                    Payment QR Expired
-                  </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    The 5-minute session for this KHQR transaction has ended to protect transaction security.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setCheckoutResult(null);
-                      setIsExpired(false);
-                      setTimeLeft(300);
-                    }}
-                    className="btn-primary inline-flex items-center gap-1.5 text-xs"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Generate New QR Code
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Countdown Timer Banner */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      <Clock className="w-4 h-4 text-emerald-600 animate-pulse" />
-                      Session Expires In:
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-100">
+                          <CreditCard className="h-4 w-4 text-emerald-600" />
+                          Pay in Full (100%)
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                          Single Pay
+                        </span>
+                      </div>
+                      <div className="mt-2.5">
+                        <div className="text-lg font-black text-slate-900 dark:text-slate-100">
+                          ${priceUsd.toFixed(2)} USD
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          ≈ {finalPriceKhr.toLocaleString()} ៛ KHR
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                        Instant lifetime access to all lessons, quizzes, and public QR certificate.
+                      </p>
                     </div>
-                    <span className="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                      {formatTimer(timeLeft)}
-                    </span>
+
+                    {/* Option B: Part Payment / Installment */}
+                    <div
+                      onClick={() => setPaymentPlan("installment")}
+                      className={`relative cursor-pointer rounded-2xl border p-4 transition-all ${
+                        paymentPlan === "installment"
+                          ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20 dark:bg-blue-950/30"
+                          : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800"
+                      }`}
+                    >
+                      <div className="absolute -top-2.5 right-3 flex items-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+                        <Sparkles className="h-2.5 w-2.5" />
+                        Popular for Students
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-100">
+                          <Split className="h-4 w-4 text-blue-600" />
+                          Part Payment ({installmentParts} Parts)
+                        </span>
+                      </div>
+                      <div className="mt-2.5">
+                        <div className="text-lg font-black text-blue-700 dark:text-blue-300">
+                          ${installmentAmountUsd.toFixed(2)} USD{" "}
+                          <span className="text-xs font-normal text-slate-500">today</span>
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          ≈ {Math.round(installmentAmountUsd * NBC_EXCHANGE_RATE).toLocaleString()} ៛ KHR
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                        Pay ${installmentAmountUsd.toFixed(2)} now to unlock course immediately.{" "}
+                        {installmentParts === 2
+                          ? `Part 2 (${remainingAmountUsd.toFixed(2)}) is due in 30 days.`
+                          : `The remaining ${remainingAmountUsd.toFixed(2)} is split across ${installmentParts - 1} monthly payments.`}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* QR Image Display */}
-                  {checkoutResult.checkout?.qrImage ? (
-                    <div className="relative inline-block p-4 bg-white rounded-2xl border-2 border-dashed border-emerald-300 shadow-md">
-                      <img
-                        src={checkoutResult.checkout.qrImage}
-                        alt="KHQR Scan to Pay"
-                        className="w-52 h-52 mx-auto rounded-lg"
-                      />
-                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                        Live Polling
+                  {/* Sub-toggle for Installments (2 vs 3 parts) */}
+                  {paymentPlan === "installment" && (
+                    <div className="mt-3 space-y-2 rounded-xl border border-blue-200 bg-blue-50/60 p-3.5 text-xs dark:border-blue-900 dark:bg-blue-950/20">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="flex items-center gap-1.5 font-semibold text-blue-900 dark:text-blue-200">
+                          <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                          Installment Structure:
+                        </span>
+                        <div className="flex items-center gap-1 rounded-lg border border-blue-200 bg-white p-0.5 dark:border-blue-800 dark:bg-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => setInstallmentParts(2)}
+                            className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                              installmentParts === 2
+                                ? "bg-blue-600 text-white shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            2 Parts (50% / 50%)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInstallmentParts(3)}
+                            className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                              installmentParts === 3
+                                ? "bg-blue-600 text-white shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            3 Parts (33.3% / mo)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2 pt-1 font-mono text-[11px] sm:grid-cols-2">
+                        <div className="flex flex-col rounded-lg border border-blue-100 bg-white p-2 dark:border-blue-900 dark:bg-slate-800">
+                          <span className="text-[10px] font-bold uppercase text-blue-600">Part 1 (Today)</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            ${installmentAmountUsd.toFixed(2)} (≈ {Math.round(installmentAmountUsd * NBC_EXCHANGE_RATE).toLocaleString()} ៛)
+                          </span>
+                          <span className="mt-0.5 text-[9px] font-semibold text-emerald-600">✓ Unlocks Full Access</span>
+                        </div>
+                        <div className="flex flex-col rounded-lg border border-blue-100 bg-white p-2 dark:border-blue-900 dark:bg-slate-800">
+                          <span className="text-[10px] font-bold uppercase text-slate-400">Remaining Balance</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            ${remainingAmountUsd.toFixed(2)} (≈ {Math.round(remainingAmountUsd * NBC_EXCHANGE_RATE).toLocaleString()} ៛)
+                          </span>
+                          <span className="mt-0.5 text-[9px] font-medium text-slate-500">Due in 30 days (0% fee)</span>
+                        </div>
                       </div>
                     </div>
-                  ) : checkoutResult.checkout?.paymentUrl ? (
-                    <div className="p-4 bg-slate-50 rounded-xl space-y-3">
-                      <a
-                        href={checkoutResult.checkout.paymentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-primary inline-flex items-center gap-2"
-                      >
-                        <Banknote className="w-4 h-4" /> Open ABA Bank Checkout <ExternalLink className="w-4 h-4" />
-                      </a>
+                  )}
+                </section>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar / Order Summary */}
+          <aside className="space-y-4 lg:sticky lg:top-4">
+            {/* Course Summary */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="h-16 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-200 shadow-inner dark:bg-slate-700">
+                  {course.thumbnailUrl ? (
+                    <img src={course.thumbnailUrl} alt={course.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-slate-400">
+                      <CreditCard className="h-6 w-6" />
                     </div>
-                  ) : null}
-
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                    Scan with any Bakong-enabled Cambodian banking app (ABA, Wing, ACLEDA, Sathapana). The system will automatically detect completion.
-                  </p>
-
-                  {/* Manual Confirmation Button (Sandbox Verification) */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                    <button
-                      onClick={handleManualConfirm}
-                      disabled={isVerifying}
-                      className="btn-secondary w-full py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-2 border-emerald-200 text-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                    >
-                      {isVerifying ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 text-emerald-600" />
-                      )}
-                      I've Paid / Simulate Sandbox Payment
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCheckoutResult(null);
-                        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-                        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-                      }}
-                      className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                    >
-                      Change Payment Method
-                    </button>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    Accredited Curriculum
+                  </span>
+                  <h2 className="mt-1 truncate text-sm font-bold text-slate-900 dark:text-slate-100">
+                    {course.title}
+                  </h2>
+                  <div className="mt-1 flex flex-wrap items-baseline gap-2">
+                    {isFree ? (
+                      <span className="text-sm font-bold text-emerald-600">Free Course</span>
+                    ) : (
+                      <>
+                        <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                          ${priceUsd.toFixed(2)} USD
+                        </span>
+                        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                          (≈ {finalPriceKhr.toLocaleString()} ៛ KHR)
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
-          ) : (
-            /* Initiate Checkout Button */
-            <button
-              onClick={handleCheckout}
-              disabled={processing}
-              className="btn-primary w-full py-3 text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition"
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating KHQR Rails...
-                </>
-              ) : isFree ? (
-                "Enroll Instantly for Free"
-              ) : (
-                <>
-                  Pay ${finalPrice} {course.currency} via {gateway.toUpperCase().replace("_", " ")}
-                  <ArrowRight className="w-4 h-4" />
-                </>
+
+            {/* Order Summary Breakdown */}
+            <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 text-xs shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Course Original Price</span>
+                <span className="font-mono">${priceUsd.toFixed(2)} USD</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Payment Plan</span>
+                <span className="text-right font-semibold text-slate-800 dark:text-slate-200">
+                  {paymentPlan === "installment"
+                    ? `Part Payment (${installmentParts} Parts • 0% Interest)`
+                    : "Full Payment (100%)"}
+                </span>
+              </div>
+              {paymentPlan === "installment" && (
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span>Remaining Balance (Due in 30 Days)</span>
+                  <span className="font-mono">${remainingAmountUsd.toFixed(2)} USD</span>
+                </div>
               )}
-            </button>
-          )}
+              <div className="flex items-baseline justify-between border-t border-slate-200 pt-2 font-bold text-slate-900 dark:border-slate-700 dark:text-slate-100">
+                <span className="text-sm">Total Due Today</span>
+                <div className="text-right">
+                  <span className="text-lg font-black text-emerald-700 dark:text-emerald-400">
+                    ${dueTodayUsd.toFixed(2)} USD
+                  </span>
+                  <span className="block text-[11px] font-medium text-slate-500">
+                    ≈ {dueTodayKhr.toLocaleString()} ៛ KHR
+                  </span>
+                </div>
+              </div>
+
+              {/* Pay Button */}
+              {!isFree && (
+                <button
+                  onClick={handlePay}
+                  disabled={processing}
+                  className="btn-primary mt-3 flex w-full items-center justify-center gap-2 py-3.5 text-sm font-bold shadow-lg transition hover:shadow-xl"
+                >
+                  {processing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Preparing ACLEDA QR...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      Pay ${dueTodayUsd.toFixed(2)} USD via ACLEDA KHQR
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              )}
+
+              <p className="pt-1 text-center text-[10px] font-medium text-slate-400">
+                You will be taken to a dedicated page with the ACLEDA QR code.
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
     </div>

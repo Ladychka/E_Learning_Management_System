@@ -14,7 +14,12 @@ export const createCourseSchema = z.object({
   prerequisites: z.array(z.string()).optional(),
   learningOutcomes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
-  scheduledAt: z.string().datetime().optional(),
+  scheduledAt: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid date")
+    .optional(),
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
+  thumbnailUrl: z.string().max(2000).optional(),
 });
 
 export const updateCourseSchema = createCourseSchema.partial();
@@ -37,7 +42,7 @@ export const createCategorySchema = z.object({
   slug: z.string().min(1).max(100),
   description: z.string().max(1000).optional(),
   icon: z.string().max(200).optional(),
-  parentId: z.string().uuid().optional(),
+  parentId: z.string().uuid().nullable().optional(),
   sortOrder: z.number().default(0),
 });
 

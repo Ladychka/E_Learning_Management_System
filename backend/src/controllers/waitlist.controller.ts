@@ -112,6 +112,13 @@ export const processWaitlist = async (
     });
     if (!existing) throw new AppError("Waitlist entry not found", 404);
 
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      existing.course.instructorId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to process this waitlist entry", 403);
+    }
+
     const updated = await prisma.waitlist.update({
       where: { id },
       data: {

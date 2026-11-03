@@ -2,11 +2,10 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
+// Let axios set Content-Type per request. Forcing application/json here makes
+// FormData uploads serialize as JSON (the file is lost).
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use((config) => {
@@ -51,7 +50,7 @@ api.interceptors.response.use(
 export const authApi = {
   register: (data: Record<string, unknown>) => api.post("/auth/register", data),
   login: (data: Record<string, unknown>) => api.post("/auth/login", data),
-  logout: () => api.post("/auth/logout"),
+  logout: (refreshToken?: string) => api.post("/auth/logout", { refreshToken }),
   me: () => api.get("/auth/me"),
   updateProfile: (data: Record<string, unknown>) => api.patch("/auth/profile", data),
   changePassword: (data: Record<string, unknown>) => api.post("/auth/change-password", data),
@@ -187,6 +186,7 @@ export const paymentApi = {
     api.post(`/payments/${id}/refund`, { reason }),
   getPaymentHistory: (params?: Record<string, string>) => api.get("/payments/history", { params }),
   getPayment: (id: string) => api.get(`/payments/${id}`),
+  getPaymentQr: (id: string) => api.get(`/payments/${id}/qr`),
   getInvoice: (id: string) => api.get(`/payments/${id}/invoice`),
   validateCoupon: (code: string, courseId?: string) => api.post("/payments/coupons/validate", { code, courseId }),
 };
@@ -278,7 +278,14 @@ export const reportApi = {
     api.get(`/reports/quizzes/${quizId}/item-analysis`),
   getRevenueAnalytics: (params?: { startDate?: string; endDate?: string }) =>
     api.get("/reports/revenue", { params }),
-  getExportUrl: (type: "completion" | "revenue") => `${API_BASE_URL}/reports/export/${type}`,
+  exportReportCsv: (type: "completion" | "revenue" | "students") =>
+    api.get(`/reports/export/${type}`, { responseType: "blob" }),
+  getExportUrl: (type: "completion" | "revenue" | "students") => {
+    const token = localStorage.getItem("accessToken");
+    return token
+      ? `${API_BASE_URL}/reports/export/${type}?token=${encodeURIComponent(token)}`
+      : `${API_BASE_URL}/reports/export/${type}`;
+  },
 };
 
 // Settings & Branding endpoints (US-091, US-093)
@@ -298,5 +305,11 @@ export const auditApi = {
 // Backup endpoints (US-094, US-095)
 export const backupApi = {
   getBackupStatus: () => api.get("/backup/status"),
-  getBackupExportUrl: () => `${API_BASE_URL}/backup/export`,
+  exportBackup: () => api.get("/backup/export", { responseType: "blob" }),
+  getBackupExportUrl: () => {
+    const token = localStorage.getItem("accessToken");
+    return token
+      ? `${API_BASE_URL}/backup/export?token=${encodeURIComponent(token)}`
+      : `${API_BASE_URL}/backup/export`;
+  },
 };

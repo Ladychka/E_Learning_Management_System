@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "@/lib/api";
-import { BookOpen, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
+import acledaLogo from "@/assets/acleda-logo.png";
 
 export const Register = () => {
   const [form, setForm] = useState({
@@ -60,9 +61,7 @@ export const Register = () => {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-4 transition-colors">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/20">
-            <BookOpen className="h-8 w-8" />
-          </div>
+          <img src={acledaLogo} alt="ACLEDA Bank" className="mx-auto h-16 w-16 object-contain" />
           <h2 className="mt-4 text-2xl font-extrabold tracking-tight">Create your account</h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Join Cambodian financial practitioners and learners on ELMS

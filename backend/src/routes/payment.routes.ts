@@ -4,9 +4,11 @@ import { validate } from "../middleware/validate";
 import {
   checkout,
   confirmPayment,
+  handlePaywayCallback,
   handleWebhook,
   getPaymentHistory,
   getPaymentById,
+  getPaymentQr,
   refundPayment,
   generateInvoice,
   getRevenueReport,
@@ -30,15 +32,12 @@ import {
 
 export const paymentRouter = Router();
 
-// ─── Payments ───
+// ─── Static paths (must be registered before /:id routes) ───
 paymentRouter.post("/checkout", authenticate, validate(checkoutSchema), checkout);
-paymentRouter.post("/:id/confirm", authenticate, validate(confirmPaymentSchema), confirmPayment);
 paymentRouter.get("/history", authenticate, getPaymentHistory);
-paymentRouter.get("/:id", authenticate, getPaymentById);
-paymentRouter.post("/:id/refund", authenticate, authorize("ADMIN"), validate(refundSchema), refundPayment);
-paymentRouter.get("/:id/invoice", authenticate, generateInvoice);
 
 // ─── Webhooks (public, signature verified in controller) ───
+paymentRouter.post("/payway/callback", handlePaywayCallback);
 paymentRouter.post("/webhook/:gateway", handleWebhook);
 
 // ─── Revenue / Payouts ───
@@ -47,12 +46,19 @@ paymentRouter.get("/payouts", authenticate, authorize("ADMIN", "INSTRUCTOR"), ge
 paymentRouter.post("/payouts/:id/process", authenticate, authorize("ADMIN"), processPayout);
 
 // ─── Coupons ───
+paymentRouter.post("/coupons/validate", authenticate, validate(validateCouponSchema), validateCoupon);
 paymentRouter.post("/coupons", authenticate, authorize("ADMIN"), validate(couponSchema), createCoupon);
 paymentRouter.get("/coupons", authenticate, authorize("ADMIN"), getCoupons);
-paymentRouter.post("/coupons/validate", authenticate, validate(validateCouponSchema), validateCoupon);
 
 // ─── Subscription Plans ───
-paymentRouter.post("/subscriptions", authenticate, authorize("ADMIN"), createSubscriptionPlan);
 paymentRouter.get("/subscriptions", getSubscriptionPlans);
+paymentRouter.post("/subscriptions", authenticate, authorize("ADMIN"), createSubscriptionPlan);
 paymentRouter.patch("/subscriptions/:id", authenticate, authorize("ADMIN"), updateSubscriptionPlan);
 paymentRouter.delete("/subscriptions/:id", authenticate, authorize("ADMIN"), deleteSubscriptionPlan);
+
+// ─── Single payment routes ───
+paymentRouter.post("/:id/confirm", authenticate, validate(confirmPaymentSchema), confirmPayment);
+paymentRouter.get("/:id/qr", authenticate, getPaymentQr);
+paymentRouter.get("/:id/invoice", authenticate, generateInvoice);
+paymentRouter.post("/:id/refund", authenticate, authorize("ADMIN"), validate(refundSchema), refundPayment);
+paymentRouter.get("/:id", authenticate, getPaymentById);

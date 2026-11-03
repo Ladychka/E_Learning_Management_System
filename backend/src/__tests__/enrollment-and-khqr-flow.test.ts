@@ -142,7 +142,7 @@ describe("Enrollment & KHQR Payment Flow Tests", () => {
     it("returns existing pending payment on identical idempotency key without duplicate creation", () => {
       const activePayments: Map<string, { id: string; amount: number; idempotencyKey: string; status: string; createdAt: number }> = new Map();
 
-      function checkoutWithIdempotency(userId: string, courseId: string, amount: number, idempotencyKey?: string) {
+      function checkoutWithIdempotency(_userId: string, _courseId: string, amount: number, idempotencyKey?: string) {
         if (idempotencyKey) {
           for (const p of activePayments.values()) {
             if (p.idempotencyKey === idempotencyKey && p.status === "pending" && Date.now() - p.createdAt < 15 * 60 * 1000) {

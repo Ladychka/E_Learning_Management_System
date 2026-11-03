@@ -20,6 +20,7 @@ interface Payment {
   createdAt: string;
   course?: { id: string; title: string; thumbnailUrl?: string };
   user?: { firstName: string; lastName: string; email: string };
+  metadata?: Record<string, any>;
 }
 
 export function PaymentDetail() {
@@ -139,16 +140,26 @@ export function PaymentDetail() {
 
         {/* Payment Method */}
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-sm font-medium text-gray-500 uppercase mb-3">Payment Method</h2>
+          <h2 className="text-sm font-medium text-gray-500 uppercase mb-3">Payment Method & Plan</h2>
           <div className="flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-gray-500" />
-            <span className="font-medium capitalize">
+            <span className="font-semibold capitalize text-gray-900">
               {payment.gateway.replace("_", " ")}
             </span>
+            {(payment.metadata as any)?.paymentPlan === "installment" && (
+              <span className="ml-2 text-xs font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full">
+                Part Payment (Installment {(payment.metadata as any)?.installmentIndex || 1} of {(payment.metadata as any)?.totalInstallments || 2})
+              </span>
+            )}
           </div>
           {payment.gatewayRef && (
             <p className="text-sm text-gray-500 mt-1">
               Reference: {payment.gatewayRef}
+            </p>
+          )}
+          {(payment.metadata as any)?.paymentPlan === "installment" && Number((payment.metadata as any)?.remainingAmount || 0) > 0 && (
+            <p className="text-xs text-slate-500 mt-2 font-medium">
+              Remaining Balance: ${(payment.metadata as any).remainingAmount} USD (Due in 30 days • 0% Interest)
             </p>
           )}
         </div>

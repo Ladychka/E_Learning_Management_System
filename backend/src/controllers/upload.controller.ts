@@ -5,12 +5,19 @@ import fs from "fs";
 
 const UPLOAD_DIR = path.resolve(process.cwd(), "uploads");
 
+const ALLOWED_FOLDERS = ["videos", "documents", "thumbnails", "submissions"];
+// Folders that any authenticated user may upload to (e.g. assignment files).
+const STUDENT_UPLOAD_FOLDERS = ["submissions"];
+
 // Ensure upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  fs.mkdirSync(path.join(UPLOAD_DIR, "videos"), { recursive: true });
-  fs.mkdirSync(path.join(UPLOAD_DIR, "documents"), { recursive: true });
-  fs.mkdirSync(path.join(UPLOAD_DIR, "thumbnails"), { recursive: true });
+}
+for (const folder of ALLOWED_FOLDERS) {
+  const folderPath = path.join(UPLOAD_DIR, folder);
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+  }
 }
 
 export const uploadFile = (
@@ -24,9 +31,18 @@ export const uploadFile = (
     }
 
     const { folder = "documents" } = req.params;
-    const allowedFolders = ["videos", "documents", "thumbnails"];
-    if (!allowedFolders.includes(folder)) {
+    if (!ALLOWED_FOLDERS.includes(folder)) {
       throw new AppError("Invalid upload folder", 400);
+    }
+
+    // Course media is instructor/admin only; students can upload assignment
+    // files to the dedicated submissions folder.
+    if (
+      !STUDENT_UPLOAD_FOLDERS.includes(folder) &&
+      req.user?.role !== "INSTRUCTOR" &&
+      req.user?.role !== "ADMIN"
+    ) {
+      throw new AppError("Insufficient permissions", 403);
     }
 
     const relativePath = `/uploads/${folder}/${req.file.filename}`;
@@ -48,9 +64,22 @@ export const uploadFile = (
 export const serveFile = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { folder, filename } = req.params;
-    const filePath = path.join(UPLOAD_DIR, folder, filename);
 
-    if (!fs.existsSync(filePath)) {
+    // Prevent path traversal: only allow a single, whitelisted folder segment
+    // and a basename filename that stays inside the uploads directory.
+    if (
+      !ALLOWED_FOLDERS.includes(folder) ||
+      path.basename(filename) !== filename
+    ) {
+      throw new AppError("Invalid file path", 400);
+    }
+
+    const filePath = path.resolve(UPLOAD_DIR, folder, filename);
+    if (!filePath.startsWith(`${UPLOAD_DIR}${path.sep}`)) {
+      throw new AppError("Invalid file path", 400);
+    }
+
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
       throw new AppError("File not found", 404);
     }
 

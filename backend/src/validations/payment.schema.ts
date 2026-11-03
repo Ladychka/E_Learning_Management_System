@@ -3,8 +3,11 @@ import { z } from "zod";
 export const checkoutSchema = z.object({
   courseId: z.string().min(1).optional(),
   subscriptionId: z.string().uuid().optional(),
-  gateway: z.enum(["khqr", "aba_payway", "bakong"]),
+  gateway: z.enum(["khqr", "aba_payway", "bakong", "wing", "acleda", "card"]),
   couponCode: z.string().optional(),
+  paymentPlan: z.enum(["full", "installment"]).optional(),
+  installments: z.number().int().min(1).max(4).optional(),
+  currency: z.enum(["USD", "KHR"]).optional(),
 });
 
 export const confirmPaymentSchema = z.object({

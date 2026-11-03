@@ -3,6 +3,12 @@ import { prisma } from "../lib/prisma";
 import { AppError } from "../middleware/errorHandler";
 import { logAudit } from "../utils/audit";
 import { config } from "../config";
+import {
+  buildPaywayCheckout,
+  isPaywayConfigured,
+  verifyPaywaySignature,
+} from "../lib/payway";
+import { getStaticPaymentQr } from "../lib/static-payment-qr";
 
 // ─── Helpers ───
 
@@ -19,21 +25,38 @@ function generateInvoiceNumber(): string {
   return `INV-${y}${m}-${seq}`;
 }
 
-async function calculateRevenueShare(_courseId: string, amount: number): Promise<number> {
+const NBC_EXCHANGE_RATE = 4100;
+
+/** Converts any supported payment amount into USD for reporting/payouts. */
+function toUsd(amount: number, currency: string): number {
+  return String(currency).toUpperCase() === "KHR"
+    ? amount / NBC_EXCHANGE_RATE
+    : amount;
+}
+
+async function calculateRevenueShare(_courseId: string, amountUsd: number): Promise<number> {
   // Default: instructor gets 70%
   const settings = await prisma.setting.findUnique({ where: { key: "instructor_revenue_share" } });
   const sharePercent = settings ? parseFloat(settings.value) : 70;
-  return Number(((amount * sharePercent) / 100).toFixed(2));
+  return Number(((amountUsd * sharePercent) / 100).toFixed(2));
 }
 
-async function createInstructorPayout(courseId: string, paymentId: string, amount: number) {
+async function createInstructorPayout(
+  courseId: string,
+  paymentId: string,
+  amount: number,
+  currency: string
+) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     select: { instructorId: true },
   });
   if (!course) return;
 
-  const revenue = await calculateRevenueShare(courseId, amount);
+  // Payouts are always recorded in USD; converting here prevents KHR amounts
+  // (e.g. 205,000 KHR) being stored as 205,000 USD.
+  const amountUsd = toUsd(amount, currency);
+  const revenue = await calculateRevenueShare(courseId, amountUsd);
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -51,15 +74,95 @@ async function createInstructorPayout(courseId: string, paymentId: string, amoun
   });
 }
 
-async function applyCoupon(couponCode: string, amount: number, courseId?: string): Promise<{ discountAmount: number; finalAmount: number }> {
-  const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
-  if (!coupon || !coupon.isActive) return { discountAmount: 0, finalAmount: amount };
+interface PaymentForEnrollment {
+  id: string;
+  userId: string;
+  courseId: string | null;
+  amount: unknown;
+  currency: string;
+  metadata: unknown;
+}
+
+/**
+ * Resolves the course access balance in USD and returns whether the student
+ * has now paid the full course price. Installment plans unlock course access
+ * on the first confirmed part; the balance is still tracked for payouts.
+ */
+async function activateEnrollmentIfFullyPaid(payment: PaymentForEnrollment): Promise<boolean> {
+  if (!payment.courseId) return false;
+
+  const metadata = (payment.metadata as Record<string, unknown> | null) || {};
+  let requiredAmount = Number(metadata.fullCoursePrice ?? 0);
+  let requiredCurrency = payment.currency;
+  if (!requiredAmount) {
+    const course = await prisma.course.findUnique({
+      where: { id: payment.courseId },
+      select: { price: true, currency: true },
+    });
+    requiredAmount = course?.price ? Number(course.price) : Number(payment.amount);
+    requiredCurrency = course?.currency || payment.currency;
+  }
+
+  const confirmed = await prisma.payment.findMany({
+    where: {
+      userId: payment.userId,
+      courseId: payment.courseId,
+      status: "completed",
+    },
+    select: { amount: true, currency: true },
+  });
+  // Normalize all payments to USD so mixed USD/KHR plans reconcile correctly.
+  const paidAmount = confirmed.reduce(
+    (sum, item) => sum + toUsd(Number(item.amount), item.currency),
+    0
+  );
+  const requiredAmountUsd = toUsd(requiredAmount, requiredCurrency);
+  const tolerance = 0.01;
+  const fullyPaid = paidAmount + tolerance >= requiredAmountUsd;
+
+  const isInstallmentPlan =
+    metadata.paymentPlan === "installment" || metadata.paymentPlan === "balance";
+
+  // The product promises immediate access after the first installment part.
+  if (!fullyPaid && !isInstallmentPlan) return false;
+
+  await prisma.enrollment.upsert({
+    where: { userId_courseId: { userId: payment.userId, courseId: payment.courseId } },
+    create: { userId: payment.userId, courseId: payment.courseId, status: "active", enrolledBy: payment.userId },
+    update: { status: "active" },
+  });
+
+  // Only pay out the instructor once the whole balance has been collected.
+  if (fullyPaid) {
+    await createInstructorPayout(payment.courseId, payment.id, requiredAmountUsd, "USD");
+  }
+  return fullyPaid;
+}
+
+async function applyCoupon(
+  couponCode: string,
+  amount: number,
+  courseId?: string
+): Promise<{ discountAmount: number; finalAmount: number; couponId: string | null }> {
+  const normalizedCode = couponCode.trim().toUpperCase();
+  const coupon = await prisma.coupon.findUnique({ where: { code: normalizedCode } });
+  if (!coupon || !coupon.isActive) {
+    return { discountAmount: 0, finalAmount: amount, couponId: null };
+  }
 
   const now = new Date();
-  if (coupon.validFrom && now < coupon.validFrom) return { discountAmount: 0, finalAmount: amount };
-  if (coupon.validUntil && now > coupon.validUntil) return { discountAmount: 0, finalAmount: amount };
-  if (coupon.maxUses && coupon.usesCount >= coupon.maxUses) return { discountAmount: 0, finalAmount: amount };
-  if (coupon.courseId && coupon.courseId !== courseId) return { discountAmount: 0, finalAmount: amount };
+  if (coupon.validFrom && now < coupon.validFrom) {
+    return { discountAmount: 0, finalAmount: amount, couponId: null };
+  }
+  if (coupon.validUntil && now > coupon.validUntil) {
+    return { discountAmount: 0, finalAmount: amount, couponId: null };
+  }
+  if (coupon.maxUses && coupon.usesCount >= coupon.maxUses) {
+    return { discountAmount: 0, finalAmount: amount, couponId: null };
+  }
+  if (coupon.courseId && coupon.courseId !== courseId) {
+    return { discountAmount: 0, finalAmount: amount, couponId: null };
+  }
 
   let discountAmount = 0;
   if (coupon.discountType === "percentage") {
@@ -70,12 +173,9 @@ async function applyCoupon(couponCode: string, amount: number, courseId?: string
   discountAmount = Math.min(discountAmount, amount);
   const finalAmount = Number((amount - discountAmount).toFixed(2));
 
-  await prisma.coupon.update({
-    where: { id: coupon.id },
-    data: { usesCount: { increment: 1 } },
-  });
-
-  return { discountAmount, finalAmount };
+  // Usage is incremented only after a payment is actually created, so retries
+  // and idempotent replays do not burn coupon usage.
+  return { discountAmount, finalAmount, couponId: coupon.id };
 }
 
 // ─── Controllers ───
@@ -86,7 +186,15 @@ export const checkout = async (
   next: NextFunction
 ) => {
   try {
-    const { courseId, subscriptionId, gateway, couponCode } = req.body;
+    const {
+      courseId,
+      subscriptionId,
+      gateway,
+      couponCode,
+      paymentPlan = "full",
+      installments = 2,
+      currency: requestedCurrency,
+    } = req.body;
     const userId = req.user!.id;
 
     if (!courseId && !subscriptionId) {
@@ -94,7 +202,8 @@ export const checkout = async (
     }
 
     let amount = 0;
-    let currency = "USD";
+    let amountCurrency = "USD";
+    let currency = requestedCurrency || "USD";
     let targetCourseId: string | null = courseId || null;
 
     if (courseId) {
@@ -108,7 +217,8 @@ export const checkout = async (
       }
       targetCourseId = course.id;
       amount = course.price ? Number(course.price) : 0;
-      currency = course.currency || "USD";
+      amountCurrency = course.currency || "USD";
+      currency = requestedCurrency || amountCurrency;
       if (course.isFree) amount = 0;
     }
 
@@ -117,16 +227,114 @@ export const checkout = async (
       if (!plan) throw new AppError("Subscription plan not found", 404);
       if (!plan.isActive) throw new AppError("Subscription plan is not active", 400);
       amount = Number(plan.price);
-      currency = plan.currency;
+      amountCurrency = plan.currency;
+      currency = requestedCurrency || plan.currency;
     }
 
     // Apply coupon if provided
     let discountAmount = 0;
     let finalAmount = amount;
+    let appliedCouponId: string | null = null;
     if (couponCode && amount > 0) {
       const couponResult = await applyCoupon(couponCode, amount, targetCourseId || undefined);
       discountAmount = couponResult.discountAmount;
       finalAmount = couponResult.finalAmount;
+      appliedCouponId = couponResult.couponId;
+    }
+
+    // Convert the course price from its own currency into the currency the
+    // student chose to pay with, using the NBC benchmark rate.
+    const nbcRate = NBC_EXCHANGE_RATE;
+    const amountCurrencyUpper = String(amountCurrency).toUpperCase();
+    const paymentCurrencyUpper = String(currency).toUpperCase();
+    let fullChargeAmount: number;
+    if (amountCurrencyUpper === paymentCurrencyUpper) {
+      fullChargeAmount = finalAmount;
+    } else if (amountCurrencyUpper === "USD" && paymentCurrencyUpper === "KHR") {
+      fullChargeAmount = Math.round(finalAmount * nbcRate);
+    } else if (amountCurrencyUpper === "KHR" && paymentCurrencyUpper === "USD") {
+      fullChargeAmount = Number((finalAmount / nbcRate).toFixed(2));
+    } else {
+      fullChargeAmount = finalAmount;
+    }
+
+    // If the student already paid part of this course, only charge the balance.
+    let alreadyPaid = 0;
+    let previousPaymentsCount = 0;
+    let previousTotalInstallments = 0;
+    if (targetCourseId) {
+      const earlierPayments = await prisma.payment.findMany({
+        where: {
+          userId,
+          courseId: targetCourseId,
+          status: "completed",
+        },
+        select: { amount: true, currency: true },
+        orderBy: { createdAt: "asc" },
+      });
+      // Normalize earlier payments into the requested payment currency so a
+      // student who switches between USD and KHR is not double charged.
+      alreadyPaid = earlierPayments.reduce((sum, item) => {
+        const usd = toUsd(Number(item.amount), item.currency);
+        return sum + (paymentCurrencyUpper === "KHR" ? usd * nbcRate : usd);
+      }, 0);
+      alreadyPaid =
+        paymentCurrencyUpper === "KHR"
+          ? Math.round(alreadyPaid)
+          : Number(alreadyPaid.toFixed(2));
+      previousPaymentsCount = earlierPayments.length;
+      const alreadyTolerance = currency === "KHR" ? 1 : 0.01;
+      if (alreadyPaid + alreadyTolerance >= fullChargeAmount) {
+        throw new AppError("You already have access to this course", 400);
+      }
+
+      const latest = await prisma.payment.findFirst({
+        where: { userId, courseId: targetCourseId, status: "completed" },
+        orderBy: { createdAt: "desc" },
+        select: { metadata: true },
+      });
+      const latestMeta = (latest?.metadata as Record<string, unknown> | null) || {};
+      previousTotalInstallments = Number(latestMeta.totalInstallments || 0);
+    }
+
+    // Check Part Payment / Installment Plan. For later payments, continue the
+    // original schedule instead of charging the entire balance at once.
+    let chargeAmount = fullChargeAmount;
+    let totalInstallments = 1;
+    let installmentIndex = 1;
+    let remainingAmount = 0;
+    let nextDueDate: string | null = null;
+
+    if (alreadyPaid > 0) {
+      totalInstallments = Math.max(2, previousTotalInstallments || Number(installments) || 2);
+      installmentIndex = Math.min(previousPaymentsCount + 1, totalInstallments);
+      const remainingBalance = fullChargeAmount - alreadyPaid;
+      const partsLeft = Math.max(1, totalInstallments - previousPaymentsCount);
+      chargeAmount =
+        currency === "KHR"
+          ? Math.round(remainingBalance / partsLeft)
+          : Number((remainingBalance / partsLeft).toFixed(2));
+      remainingAmount = Math.max(
+        0,
+        Number((remainingBalance - chargeAmount).toFixed(2))
+      );
+      if (remainingAmount > 0) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 30);
+        nextDueDate = dueDate.toISOString();
+      }
+    } else if (paymentPlan === "installment" && fullChargeAmount > 0) {
+      totalInstallments = Math.max(2, Math.min(Number(installments) || 2, 4));
+      chargeAmount =
+        currency === "KHR"
+          ? Math.round(fullChargeAmount / totalInstallments)
+          : Number((fullChargeAmount / totalInstallments).toFixed(2));
+      remainingAmount = Number((fullChargeAmount - chargeAmount).toFixed(2));
+      if (remainingAmount > 0) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 30);
+        nextDueDate = dueDate.toISOString();
+      }
     }
 
     // Check idempotency key if supplied
@@ -138,7 +346,11 @@ export const checkout = async (
           courseId: targetCourseId,
           status: "pending",
           createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) }, // within last 15m
-        },
+          metadata: {
+            path: ["idempotencyKey"],
+            equals: idempotencyKey,
+          },
+        } as any,
         include: {
           user: { select: { firstName: true, lastName: true, email: true } },
           course: { select: { id: true, title: true, price: true } },
@@ -146,25 +358,110 @@ export const checkout = async (
       });
 
       if (existingPayment) {
+        const existingAmount = Number(existingPayment.amount);
+        const existingMeta =
+          (existingPayment.metadata as Record<string, unknown> | null) || {};
         const checkoutData: Record<string, unknown> = {
           paymentId: existingPayment.id,
-          amount: Number(existingPayment.amount),
+          amount: existingAmount,
+          fullPrice: finalAmount,
           currency: existingPayment.currency,
+          amountKhr:
+            existingPayment.currency === "KHR"
+              ? existingAmount
+              : Math.round(existingAmount * NBC_EXCHANGE_RATE),
           status: existingPayment.status,
           gateway: existingPayment.gateway,
+          paymentPlan: existingMeta.paymentPlan ?? paymentPlan,
+          totalInstallments: Number(existingMeta.totalInstallments ?? totalInstallments),
+          installmentIndex: Number(existingMeta.installmentIndex ?? installmentIndex),
+          remainingAmount: Number(existingMeta.remainingAmount ?? remainingAmount),
+          nextDueDate: (existingMeta.nextDueDate as string | null) ?? nextDueDate,
         };
 
-        if (existingPayment.gateway === "khqr" && Number(existingPayment.amount) > 0) {
-          checkoutData.qrData = `https://sandbox.khqr.gov.kh/pay/${existingPayment.gatewayRef}`;
-          checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
-        }
-        if (existingPayment.gateway === "aba_payway" && Number(existingPayment.amount) > 0) {
-          checkoutData.paymentUrl = config.payments.abaPayLink || `https://sandbox.payway.com.kh/payment/${existingPayment.gatewayRef}`;
-        }
-        if (existingPayment.gateway === "bakong" && Number(existingPayment.amount) > 0) {
-          checkoutData.deeplink = `bakong://payment?ref=${existingPayment.gatewayRef}`;
-          checkoutData.qrData = `bakong://payment?ref=${existingPayment.gatewayRef}`;
-          checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+        const existingRef = existingPayment.gatewayRef || "REF";
+
+        if (
+          isPaywayConfigured() &&
+          existingAmount > 0 &&
+          existingPayment.course &&
+          existingPayment.gateway !== "acleda"
+        ) {
+          checkoutData.payway = buildPaywayCheckout({
+            paymentId: existingPayment.id,
+            tranId: existingRef,
+            amount: existingAmount,
+            currency: existingPayment.currency,
+            gateway: existingPayment.gateway,
+            courseId: existingPayment.course.id,
+            courseTitle: existingPayment.course.title,
+            firstName: existingPayment.user.firstName,
+            lastName: existingPayment.user.lastName,
+            email: existingPayment.user.email,
+          });
+          checkoutData.sandbox = false;
+          checkoutData.bankName = "ABA PayWay (KHQR / Card)";
+          checkoutData.note = "Complete payment in the ABA PayWay window. Course access unlocks automatically once the full amount is confirmed.";
+        } else {
+          checkoutData.sandbox = true;
+          const staticQr = getStaticPaymentQr(existingAmount, existingPayment.currency);
+          if (
+            (existingPayment.gateway === "khqr" || existingPayment.gateway === "aba_payway") &&
+            existingAmount > 0
+          ) {
+            if (staticQr) {
+              checkoutData.qrData = staticQr.payload;
+              checkoutData.qrImage = staticQr.imageUrl;
+              checkoutData.staticQr = true;
+              checkoutData.bankName = "ACLEDA Bank KHQR";
+              checkoutData.note =
+                "Scan the QR with ACLEDA, Bakong, ABA, or any KHQR banking app. The exact amount is pre-filled — no typing needed.";
+            } else {
+              const abaLink = config.payments.abaPayLink;
+              checkoutData.qrData = abaLink || `https://sandbox.khqr.gov.kh/pay/${existingRef}`;
+              checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+              if (abaLink) {
+                checkoutData.paymentUrl = abaLink;
+                checkoutData.bankName = "ABA PayWay Payment Link";
+                checkoutData.note =
+                  "Scan the QR or tap the button to open the official ABA PayWay payment page, then complete the payment.";
+              }
+            }
+          }
+          if (existingPayment.gateway === "wing" && existingAmount > 0) {
+            checkoutData.qrData = `https://sandbox.wingmoney.com/pay/${existingRef}`;
+            checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+            checkoutData.paymentUrl = `https://sandbox.wingmoney.com/checkout/${existingRef}`;
+          }
+          if (existingPayment.gateway === "acleda" && existingAmount > 0) {
+            checkoutData.bankName = "ACLEDA KHQR";
+            if (staticQr) {
+              checkoutData.qrData = staticQr.payload;
+              checkoutData.qrImage = staticQr.imageUrl;
+              checkoutData.staticQr = true;
+              checkoutData.note =
+                "Scan the QR with the ACLEDA mobile app or any KHQR banking app. The exact amount is pre-filled — no typing needed.";
+            } else {
+              const fallbackLink =
+                config.payments.abaPayLink || `https://sandbox.khqr.gov.kh/pay/${existingRef}`;
+              checkoutData.qrData = fallbackLink;
+              checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                fallbackLink
+              )}`;
+              checkoutData.paymentUrl = config.payments.abaPayLink || undefined;
+              checkoutData.note = config.payments.abaPayLink
+                ? "This amount has no pre-set ACLEDA QR. Open the ABA payment link or scan the fallback QR and enter the exact amount shown."
+                : "This amount has no pre-set ACLEDA QR. Scan the fallback QR and enter the exact amount shown.";
+            }
+          }
+          if (existingPayment.gateway === "bakong" && existingAmount > 0) {
+            checkoutData.deeplink = `bakong://payment?ref=${existingRef}`;
+            checkoutData.qrData = `bakong://payment?ref=${existingRef}`;
+            checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+          }
+          if (existingPayment.gateway === "card" && existingAmount > 0) {
+            checkoutData.paymentUrl = `https://sandbox.payway.com.kh/card-checkout/${existingRef}`;
+          }
         }
 
         res.status(200).json({ success: true, data: { payment: existingPayment, checkout: checkoutData } });
@@ -173,22 +470,31 @@ export const checkout = async (
     }
 
     // For free courses, auto-complete
-    const status = finalAmount === 0 ? "completed" : "pending";
-    const gatewayRef = finalAmount > 0 ? generateGatewayRef(gateway) : null;
+    const status = chargeAmount === 0 ? "completed" : "pending";
+    const gatewayRef = chargeAmount > 0 ? generateGatewayRef(gateway) : null;
 
     const payment = await prisma.payment.create({
       data: {
         userId,
         courseId: targetCourseId,
         subscriptionId: subscriptionId || null,
-        amount: finalAmount,
+        amount: chargeAmount,
         currency,
         status,
         gateway,
         gatewayRef,
         couponCode: couponCode || null,
         discountAmount: discountAmount > 0 ? discountAmount : null,
-        metadata: idempotencyKey ? { idempotencyKey } : undefined,
+        metadata: {
+          ...(idempotencyKey ? { idempotencyKey } : {}),
+          paymentPlan: alreadyPaid > 0 ? "balance" : paymentPlan,
+          totalInstallments,
+          installmentIndex,
+          fullCoursePrice: fullChargeAmount,
+          chargeAmount,
+          remainingAmount,
+          nextDueDate,
+        },
         paidAt: status === "completed" ? new Date() : null,
       },
       include: {
@@ -196,6 +502,14 @@ export const checkout = async (
         course: { select: { id: true, title: true, price: true } },
       },
     });
+
+    // Only consume coupon usage after a new payment has been created.
+    if (appliedCouponId) {
+      await prisma.coupon.update({
+        where: { id: appliedCouponId },
+        data: { usesCount: { increment: 1 } },
+      });
+    }
 
     // Auto-enroll for free courses
     if (status === "completed" && targetCourseId) {
@@ -211,32 +525,123 @@ export const checkout = async (
       action: "CHECKOUT",
       entity: "Payment",
       entityId: payment.id,
-      newValues: { courseId, subscriptionId, gateway, amount: finalAmount, status },
+      newValues: { courseId, subscriptionId, gateway, amount: chargeAmount, paymentPlan, status },
       ipAddress: req.ip,
       userAgent: req.get("user-agent"),
     });
 
-    // Build checkout payload (in sandbox, return a mock QR / deeplink)
+    // Build checkout payload
     const checkoutData: Record<string, unknown> = {
       paymentId: payment.id,
-      amount: finalAmount,
+      amount: chargeAmount,
+      fullPrice: finalAmount,
       currency,
+      amountKhr:
+        currency === "KHR" ? chargeAmount : Math.round(chargeAmount * NBC_EXCHANGE_RATE),
+      paymentPlan: alreadyPaid > 0 ? "balance" : paymentPlan,
+      totalInstallments,
+      installmentIndex,
+      remainingAmount,
+      nextDueDate,
       status,
       gateway,
+      expiresInSeconds: 300,
+      pollIntervalSeconds: 3,
     };
 
-    if (gateway === "khqr" && finalAmount > 0) {
-      checkoutData.qrData = `https://sandbox.khqr.gov.kh/pay/${gatewayRef}`;
-      checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
-    }
-    if (gateway === "aba_payway" && finalAmount > 0) {
-      checkoutData.paymentUrl = config.payments.abaPayLink || `https://sandbox.payway.com.kh/payment/${gatewayRef}`;
-      checkoutData.note = "Please pay the exact amount shown on ABA Pay. After payment, your enrollment will be confirmed by the admin within 24 hours.";
-    }
-    if (gateway === "bakong" && finalAmount > 0) {
-      checkoutData.deeplink = `bakong://payment?ref=${gatewayRef}`;
-      checkoutData.qrData = `bakong://payment?ref=${gatewayRef}`;
-      checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+    if (isPaywayConfigured() && chargeAmount > 0 && payment.course && gateway !== "acleda") {
+      const profile = await prisma.profile.findUnique({
+        where: { userId },
+        select: { phone: true },
+      });
+      checkoutData.payway = buildPaywayCheckout({
+        paymentId: payment.id,
+        tranId: gatewayRef || payment.id,
+        amount: chargeAmount,
+        currency,
+        gateway,
+        courseId: payment.course.id,
+        courseTitle: payment.course.title,
+        firstName: payment.user.firstName,
+        lastName: payment.user.lastName,
+        email: payment.user.email,
+        phone: profile?.phone,
+      });
+      checkoutData.sandbox = false;
+      checkoutData.bankName = gateway === "card" ? "Card Payment (ABA PayWay)" : "Bakong KHQR (via ABA PayWay)";
+      checkoutData.note =
+        gateway === "card"
+          ? "Complete the card payment in the ABA PayWay window. Access unlocks automatically after confirmation."
+          : "Scan with ABA Mobile or any KHQR banking app (Wing, ACLEDA, Canadia, Sathapana...). The exact amount is pre-filled — no typing needed.";
+    } else {
+      checkoutData.sandbox = true;
+      const staticQr = getStaticPaymentQr(chargeAmount, currency);
+      if (
+        (gateway === "khqr" || gateway === "aba_payway") &&
+        chargeAmount > 0
+      ) {
+        if (staticQr) {
+          checkoutData.qrData = staticQr.payload;
+          checkoutData.qrImage = staticQr.imageUrl;
+          checkoutData.staticQr = true;
+          checkoutData.bankName = "ACLEDA Bank KHQR";
+          checkoutData.note =
+            "Scan the QR with ACLEDA, Bakong, ABA, or any KHQR banking app. The exact amount is pre-filled — no typing needed.";
+        } else {
+          const abaLink = config.payments.abaPayLink;
+          checkoutData.qrData = abaLink || `https://sandbox.khqr.gov.kh/pay/${gatewayRef}`;
+          checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+          if (abaLink) {
+            checkoutData.paymentUrl = abaLink;
+            checkoutData.bankName = "ABA PayWay Payment Link";
+            checkoutData.note =
+              "Scan the QR or tap the button to open the official ABA PayWay payment page, then complete the payment.";
+          } else {
+            checkoutData.bankName = "Bakong KHQR (All Cambodian Banks)";
+            checkoutData.note = "Scan with Bakong, ABA, ACLEDA, Wing, Sathapana, or Canadia bank apps.";
+          }
+        }
+      }
+      if (gateway === "wing" && chargeAmount > 0) {
+        checkoutData.qrData = `https://sandbox.wingmoney.com/pay/${gatewayRef}`;
+        checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+        checkoutData.paymentUrl = `https://sandbox.wingmoney.com/checkout/${gatewayRef}`;
+        checkoutData.bankName = "Wing Bank & WingPay";
+        checkoutData.note = "Scan with Wing Bank App or pay via WingPay.";
+      }
+      if (gateway === "acleda" && chargeAmount > 0) {
+        checkoutData.bankName = "ACLEDA KHQR";
+        if (staticQr) {
+          checkoutData.qrData = staticQr.payload;
+          checkoutData.qrImage = staticQr.imageUrl;
+          checkoutData.staticQr = true;
+          checkoutData.note =
+            "Scan the QR with the ACLEDA mobile app or any KHQR banking app. The exact amount is pre-filled — no typing needed.";
+        } else {
+          const fallbackLink =
+            config.payments.abaPayLink || `https://sandbox.khqr.gov.kh/pay/${gatewayRef}`;
+          checkoutData.qrData = fallbackLink;
+          checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+            fallbackLink
+          )}`;
+          checkoutData.paymentUrl = config.payments.abaPayLink || undefined;
+          checkoutData.note = config.payments.abaPayLink
+            ? "This amount has no pre-set ACLEDA QR. Open the ABA payment link or scan the fallback QR and enter the exact amount shown."
+            : "This amount has no pre-set ACLEDA QR. Scan the fallback QR and enter the exact amount shown.";
+        }
+      }
+      if (gateway === "bakong" && chargeAmount > 0) {
+        checkoutData.deeplink = `bakong://payment?ref=${gatewayRef}`;
+        checkoutData.qrData = `bakong://payment?ref=${gatewayRef}`;
+        checkoutData.qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(String(checkoutData.qrData))}`;
+        checkoutData.bankName = "Bakong Wallet Deeplink";
+        checkoutData.note = "Scan with Bakong wallet or tap to switch to the Bakong app.";
+      }
+      if (gateway === "card" && chargeAmount > 0) {
+        checkoutData.paymentUrl = `https://sandbox.payway.com.kh/card-checkout/${gatewayRef}`;
+        checkoutData.bankName = "Credit / Debit Card (Visa, Mastercard, UnionPay)";
+        checkoutData.note = "Processed securely via ABA PayWay PCI-DSS gateway.";
+      }
     }
 
     res.status(201).json({ success: true, data: { payment, checkout: checkoutData } });
@@ -263,6 +668,14 @@ export const confirmPayment = async (
       throw new AppError("Payment is not in pending status", 400);
     }
 
+    const isAdmin = req.user?.role === "ADMIN";
+    const isOwner = payment.userId === req.user?.id;
+    const sandboxConfirmAllowed =
+      config.payments.allowSandboxConfirm && !config.isProduction;
+    if (!isAdmin && !(sandboxConfirmAllowed && isOwner)) {
+      throw new AppError("Only an administrator can confirm this payment", 403);
+    }
+
     const updateData: Record<string, unknown> = { status };
     if (status === "completed") {
       updateData.paidAt = new Date();
@@ -281,15 +694,7 @@ export const confirmPayment = async (
     });
 
     if (status === "completed" && payment.courseId) {
-      // Auto-enroll
-      await prisma.enrollment.upsert({
-        where: { userId_courseId: { userId: payment.userId, courseId: payment.courseId } },
-        create: { userId: payment.userId, courseId: payment.courseId, status: "active", enrolledBy: payment.userId },
-        update: { status: "active" },
-      });
-
-      // Record instructor revenue
-      await createInstructorPayout(payment.courseId, payment.id, Number(payment.amount));
+      await activateEnrollmentIfFullyPaid(payment);
     }
 
     await logAudit({
@@ -317,8 +722,18 @@ export const handleWebhook = async (
     const { gateway } = req.params;
     const payload = req.body;
 
-    // In production, verify webhook signatures here
-    // For sandbox, accept any payload shape that includes gatewayRef and status
+    // Legacy gateway webhooks must be authenticated with a shared secret.
+    // Development/sandbox can leave it unset, production may not.
+    if (config.isProduction && !config.payments.webhookSecret) {
+      throw new AppError("Payment webhook secret is not configured", 503);
+    }
+    if (config.payments.webhookSecret) {
+      const providedSecret = String(req.headers["x-webhook-secret"] || "");
+      if (providedSecret !== config.payments.webhookSecret) {
+        throw new AppError("Invalid webhook signature", 401);
+      }
+    }
+
     const gatewayRef = payload.gatewayRef || payload.transactionId || payload.ref;
     const status = payload.status || payload.result;
 
@@ -340,6 +755,16 @@ export const handleWebhook = async (
       return res.json({ success: true, message: "Payment already finalized" });
     }
 
+    const webhookAmount = payload.amount ?? payload.total_amount ?? payload.payment_amount;
+    if (webhookAmount !== undefined && webhookAmount !== null) {
+      const expected = Number(payment.amount);
+      const received = Number(webhookAmount);
+      const tolerance = payment.currency === "KHR" ? 1 : 0.01;
+      if (!Number.isFinite(received) || received + tolerance < expected) {
+        throw new AppError("Webhook amount does not match the payment", 400);
+      }
+    }
+
     const normalizedStatus = status === "success" || status === "completed" ? "completed" : "failed";
     const updateData: Record<string, unknown> = { status: normalizedStatus };
     if (normalizedStatus === "completed") {
@@ -352,12 +777,7 @@ export const handleWebhook = async (
     });
 
     if (normalizedStatus === "completed" && payment.courseId) {
-      await prisma.enrollment.upsert({
-        where: { userId_courseId: { userId: payment.userId, courseId: payment.courseId } },
-        create: { userId: payment.userId, courseId: payment.courseId, status: "active", enrolledBy: payment.userId },
-        update: { status: "active" },
-      });
-      await createInstructorPayout(payment.courseId, payment.id, Number(payment.amount));
+      await activateEnrollmentIfFullyPaid(payment);
     }
 
     await logAudit({
@@ -370,6 +790,102 @@ export const handleWebhook = async (
     });
 
     res.json({ success: true, message: "Webhook processed" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * ABA PayWay return/callback endpoint. PayWay POSTs the transaction result here
+ * after the customer pays. The request is authenticated with the
+ * X-PayWay-Hmac-Sha512 header, then the payment is marked completed and the
+ * student is enrolled only when the full course amount has been received.
+ */
+export const handlePaywayCallback = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const payload = (req.body || {}) as Record<string, unknown>;
+    const signature = String(req.headers["x-payway-hmac-sha512"] || "");
+
+    if (!verifyPaywaySignature(payload, signature)) {
+      throw new AppError("Invalid PayWay signature", 401);
+    }
+
+    const tranId = String(payload.tran_id || "");
+    if (!tranId) throw new AppError("Missing transaction id", 400);
+
+    const payment = await prisma.payment.findFirst({
+      where: { gatewayRef: tranId },
+      include: { course: true },
+    });
+
+    if (!payment) {
+      return res.json({ success: true, message: "Unknown transaction acknowledged" });
+    }
+    if (payment.status === "completed" || payment.status === "refunded") {
+      return res.json({ success: true, message: "Payment already finalized" });
+    }
+
+    const approved = String(payload.status) === "0";
+    if (!approved) {
+      await prisma.payment.update({ where: { id: payment.id }, data: { status: "failed" } });
+      await logAudit({
+        action: "PAYWAY_PAYMENT_FAILED",
+        entity: "Payment",
+        entityId: payment.id,
+        newValues: { status: payload.status, tran_id: tranId },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+      return res.json({ success: true, message: "Payment not approved" });
+    }
+
+    const expectedAmount = Number(payment.amount);
+    const paidAmount = Number(
+      payload.original_amount ?? payload.total_amount ?? payload.payment_amount ?? 0
+    );
+    const tolerance = payment.currency === "KHR" ? 1 : 0.01;
+
+    if (!paidAmount || paidAmount + tolerance < expectedAmount) {
+      await prisma.payment.update({ where: { id: payment.id }, data: { status: "failed" } });
+      await logAudit({
+        action: "PAYWAY_AMOUNT_MISMATCH",
+        entity: "Payment",
+        entityId: payment.id,
+        newValues: { expectedAmount, paidAmount, currency: payment.currency, tran_id: tranId },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+      return res.json({ success: true, message: "Amount mismatch" });
+    }
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: "completed", paidAt: new Date() },
+    });
+
+    const enrolled = await activateEnrollmentIfFullyPaid(payment);
+
+    await logAudit({
+      action: "PAYWAY_PAYMENT_COMPLETED",
+      entity: "Payment",
+      entityId: payment.id,
+      newValues: {
+        tran_id: tranId,
+        paidAmount,
+        currency: payment.currency,
+        enrolled,
+        apv: payload.apv,
+        payment_type: payload.payment_type,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
+    res.json({ success: true, message: "Payment confirmed", enrolled });
   } catch (error) {
     return next(error);
   }
@@ -390,9 +906,12 @@ export const getPaymentHistory = async (
     if (status) where.status = status;
     if (gateway) where.gateway = gateway;
 
-    // Students see only their own payments
+    // Students see only their own payments; instructors only payments for
+    // their own courses; admins see everything.
     if (req.user?.role === "STUDENT") {
       where.userId = req.user.id;
+    } else if (req.user?.role === "INSTRUCTOR") {
+      where.course = { instructorId: req.user.id };
     }
 
     const [payments, total] = await Promise.all([
@@ -431,7 +950,7 @@ export const getPaymentById = async (
       where: { id },
       include: {
         user: { select: { firstName: true, lastName: true, email: true } },
-        course: { select: { id: true, title: true, price: true } },
+        course: { select: { id: true, title: true, price: true, instructorId: true } },
       },
     });
 
@@ -439,8 +958,67 @@ export const getPaymentById = async (
     if (req.user?.role === "STUDENT" && payment.userId !== req.user.id) {
       throw new AppError("Not authorized to view this payment", 403);
     }
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      payment.course?.instructorId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to view this payment", 403);
+    }
 
     res.json({ success: true, data: payment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPaymentQr = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    const payment = await prisma.payment.findUnique({
+      where: { id },
+      include: { course: { select: { id: true, title: true, instructorId: true } } },
+    });
+
+    if (!payment) throw new AppError("Payment not found", 404);
+    if (req.user?.role === "STUDENT" && payment.userId !== req.user.id) {
+      throw new AppError("Not authorized to view this payment", 403);
+    }
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      payment.course?.instructorId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to view this payment", 403);
+    }
+
+    const staticQr = getStaticPaymentQr(Number(payment.amount), payment.currency);
+    const fallbackPayload =
+      config.payments.abaPayLink ||
+      `https://sandbox.khqr.gov.kh/pay/${payment.gatewayRef || payment.id}`;
+
+    res.json({
+      success: true,
+      data: {
+        paymentId: payment.id,
+        amount: Number(payment.amount),
+        currency: payment.currency,
+        status: payment.status,
+        gatewayRef: payment.gatewayRef,
+        course: payment.course,
+        imageUrl: staticQr
+          ? staticQr.imageUrl
+          : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+              fallbackPayload
+            )}`,
+        payload: staticQr ? staticQr.payload : fallbackPayload,
+        staticQr: Boolean(staticQr),
+        bankName: staticQr ? "ACLEDA KHQR" : "KHQR / ABA Payment",
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -477,12 +1055,39 @@ export const refundPayment = async (
       },
     });
 
-    // Unenroll student if course payment
+    // Recompute the remaining balance so refunding one installment does not
+    // revoke access when the student still has other completed payments.
     if (payment.courseId) {
-      await prisma.enrollment.updateMany({
-        where: { userId: payment.userId, courseId: payment.courseId, status: "active" },
-        data: { status: "dropped" },
+      const meta = (payment.metadata as Record<string, unknown> | null) || {};
+      let requiredAmount = Number(meta.fullCoursePrice ?? 0);
+      let requiredCurrency = payment.currency;
+      if (!requiredAmount) {
+        requiredAmount = payment.course?.price
+          ? Number(payment.course.price)
+          : Number(payment.amount);
+        requiredCurrency = payment.course?.currency || payment.currency;
+      }
+
+      const completed = await prisma.payment.findMany({
+        where: {
+          userId: payment.userId,
+          courseId: payment.courseId,
+          status: "completed",
+        },
+        select: { amount: true, currency: true },
       });
+      const remainingPaidUsd = completed.reduce(
+        (sum, item) => sum + toUsd(Number(item.amount), item.currency),
+        0
+      );
+      const requiredUsd = toUsd(requiredAmount, requiredCurrency);
+
+      if (remainingPaidUsd + 0.01 < requiredUsd) {
+        await prisma.enrollment.updateMany({
+          where: { userId: payment.userId, courseId: payment.courseId, status: "active" },
+          data: { status: "dropped" },
+        });
+      }
     }
 
     await logAudit({
@@ -513,7 +1118,7 @@ export const generateInvoice = async (
       where: { id },
       include: {
         user: { select: { firstName: true, lastName: true, email: true } },
-        course: { select: { id: true, title: true } },
+        course: { select: { id: true, title: true, instructorId: true } },
       },
     });
 
@@ -521,17 +1126,30 @@ export const generateInvoice = async (
     if (req.user?.role === "STUDENT" && payment.userId !== req.user.id) {
       throw new AppError("Not authorized to view this invoice", 403);
     }
+    if (
+      req.user?.role === "INSTRUCTOR" &&
+      payment.course?.instructorId !== req.user.id
+    ) {
+      throw new AppError("Not authorized to view this invoice", 403);
+    }
+
+    const meta = (payment.metadata || {}) as Record<string, any>;
+    const isInstallment = meta.paymentPlan === "installment";
 
     const invoice = {
       invoiceNumber: generateInvoiceNumber(),
       issuedAt: new Date().toISOString(),
       billedTo: {
-        name: `${payment.user?.firstName || ""} ${payment.user?.lastName || ""}`.trim(),
+        name: `${payment.user?.firstName || ""} ${payment.user?.lastName || ""}`.trim() || "Student",
         email: payment.user?.email,
       },
       items: [
         {
-          description: payment.course ? `Course: ${payment.course.title}` : "Subscription",
+          description: payment.course
+            ? isInstallment
+              ? `Course: ${payment.course.title} (Part Payment — Installment ${meta.installmentIndex || 1} of ${meta.totalInstallments || 2})`
+              : `Course: ${payment.course.title}`
+            : "Subscription",
           amount: payment.amount,
           currency: payment.currency,
         },
@@ -540,6 +1158,17 @@ export const generateInvoice = async (
       discount: payment.discountAmount || 0,
       total: payment.amount,
       currency: payment.currency,
+      paymentPlan: isInstallment ? "installment" : "full",
+      installmentSchedule: isInstallment
+        ? {
+            installmentIndex: meta.installmentIndex || 1,
+            totalInstallments: meta.totalInstallments || 2,
+            fullCoursePrice: meta.fullCoursePrice || payment.amount,
+            amountPaid: payment.amount,
+            remainingAmount: meta.remainingAmount || 0,
+            nextDueDate: meta.nextDueDate || null,
+          }
+        : null,
       payment: {
         method: payment.gateway,
         reference: payment.gatewayRef,
@@ -723,7 +1352,7 @@ export const createCoupon = async (
 
     const coupon = await prisma.coupon.create({
       data: {
-        code: code.toUpperCase(),
+        code: code.trim().toUpperCase(),
         description,
         discountType,
         discountValue,
@@ -792,7 +1421,9 @@ export const validateCoupon = async (
   try {
     const { code, courseId } = req.body;
 
-    const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });
+    const coupon = await prisma.coupon.findUnique({
+      where: { code: code.trim().toUpperCase() },
+    });
     if (!coupon) throw new AppError("Invalid coupon code", 400);
     if (!coupon.isActive) throw new AppError("Coupon is inactive", 400);
     if (coupon.validUntil && new Date() > coupon.validUntil) throw new AppError("Coupon has expired", 400);

@@ -66,6 +66,7 @@ model User {
   notifications Notification[]
   comments      Comment[]
   announcementsCreated Announcement[] @relation("AnnouncementCreator")
+  lessonCompletions LessonCompletion[]
 
   @@map("users")
 }
@@ -185,6 +186,7 @@ model Course {
   payments     Payment[]
   gradeCategories GradeCategory[]
   announcements Announcement[]
+  lessonCompletions LessonCompletion[]
 
   @@map("courses")
 }
@@ -226,6 +228,7 @@ model Lesson {
   quiz      Quiz?
   versions  LessonVersion[]
   comments  Comment[]
+  completions LessonCompletion[]
 
   @@map("lessons")
 }
@@ -314,6 +317,22 @@ model LessonVersion {
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@map("lesson_versions")
+}
+
+model LessonCompletion {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  lessonId    String   @map("lesson_id")
+  courseId    String   @map("course_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId, courseId])
+  @@map("lesson_completions")
 }
 
 // ─── ENROLLMENTS ───

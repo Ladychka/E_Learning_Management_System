@@ -14,7 +14,7 @@ interface Category {
   slug: string;
   description: string;
   isActive: boolean;
-  parent: { name: string } | null;
+  parent: { id: string; name: string } | null;
   _count: { courses: number };
 }
 
@@ -56,12 +56,21 @@ export const AdminCategories = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         ...form,
         slug: form.slug || form.name.toLowerCase().replace(/\s+/g, "-"),
       };
+      if (!form.parentId) {
+        delete payload.parentId;
+      } else {
+        payload.parentId = form.parentId;
+      }
       if (editingId) {
-        await categoryApi.updateCategory(editingId, payload);
+        // An empty parent means move this category back to top level.
+        await categoryApi.updateCategory(editingId, {
+          ...payload,
+          parentId: form.parentId || null,
+        });
         toast.success("Topic updated");
       } else {
         await categoryApi.createCategory(payload);

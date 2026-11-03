@@ -29,6 +29,7 @@ import {
 import { useState } from "react";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { OnboardingModal } from "./OnboardingModal";
+import acledaLogo from "@/assets/acleda-logo.png";
 
 export const Layout = () => {
   const { user, logout } = useAuth();
@@ -78,11 +79,9 @@ export const Layout = () => {
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-200/80 dark:border-slate-800 px-6">
-          <Link to="/" className="flex items-center gap-2.5 text-lg font-bold text-emerald-600 dark:text-emerald-400">
-            <div className="p-1.5 rounded-lg bg-emerald-600 text-white">
-              <BookOpen className="h-4 w-4" />
-            </div>
-            <span className="tracking-tight font-extrabold">ELMS FinTech</span>
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src={acledaLogo} alt="ACLEDA Bank" className="h-9 w-9 object-contain" />
+            <span className="tracking-tight font-extrabold text-[#163865] dark:text-white">ELMS FinTech</span>
           </Link>
           <button
             className="lg:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"

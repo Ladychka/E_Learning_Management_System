@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { authenticate, authorize } from "../middleware/auth";
+import {
+  authenticate,
+  authorize,
+  optionalAuthenticate,
+} from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import {
   createLessonSchema,
@@ -10,6 +14,7 @@ import {
   getLessonsByModule,
   createLesson,
   getLessonById,
+  completeLesson,
   updateLesson,
   deleteLesson,
   reorderLessons,
@@ -39,7 +44,13 @@ export { router as lessonRouter };
 // Separate router for /lessons/:id
 export const lessonDetailRouter = Router();
 
-lessonDetailRouter.get("/:id", getLessonById);
+lessonDetailRouter.get("/:id", optionalAuthenticate, getLessonById);
+lessonDetailRouter.post(
+  "/:id/complete",
+  authenticate,
+  authorize("STUDENT"),
+  completeLesson
+);
 lessonDetailRouter.patch(
   "/:id",
   authenticate,

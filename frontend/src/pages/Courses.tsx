@@ -290,7 +290,12 @@ export const Courses = () => {
                             <span className="text-lg font-extrabold text-gray-900">${priceUsd.toFixed(2)}</span>
                             <span className="text-[10px] text-gray-400 uppercase font-semibold">USD</span>
                           </div>
-                          <span className="text-[10px] text-emerald-700 font-medium">≈ {priceKhr} ៛</span>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-emerald-700 font-medium">≈ {priceKhr} ៛</span>
+                            <span className="mt-0.5 inline-flex items-center text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60 w-fit">
+                              Or 2 parts of ${(priceUsd / 2).toFixed(2)}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
