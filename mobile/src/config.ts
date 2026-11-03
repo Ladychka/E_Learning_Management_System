@@ -5,11 +5,18 @@ const devBaseUrl = Platform.select({
   default: "http://localhost:5000/api/v1",
 });
 
-export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || devBaseUrl;
+const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+export const API_BASE_URL = configuredBaseUrl
+  ? Platform.OS === "android" && configuredBaseUrl.includes("localhost")
+    ? configuredBaseUrl.replace("localhost", "10.0.2.2")
+    : configuredBaseUrl
+  : devBaseUrl;
 
 const isDevelopment =
-  typeof __DEV__ !== "undefined" ? __DEV__ : process.env.NODE_ENV !== "production";
+  typeof __DEV__ !== "undefined"
+    ? __DEV__
+    : process.env.NODE_ENV !== "production";
 
 if (!isDevelopment && !/^https:\/\//i.test(API_BASE_URL)) {
   throw new Error(
