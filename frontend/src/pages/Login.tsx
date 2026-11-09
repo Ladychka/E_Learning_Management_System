@@ -58,7 +58,7 @@ export const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input mt-1"
-                placeholder="you@aub.edu.kh"
+                placeholder="you@elms.edu"
               />
             </div>
 
@@ -108,21 +108,21 @@ export const Login = () => {
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => fillDemo("student@aub.edu.kh", "Student@123")}
+                onClick={() => fillDemo("student@elms.edu", "Student123!")}
                 className="px-2 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition border border-emerald-200/50"
               >
                 Student
               </button>
               <button
                 type="button"
-                onClick={() => fillDemo("instructor@aub.edu.kh", "Instructor@123")}
+                onClick={() => fillDemo("instructor@elms.edu", "Instructor123!")}
                 className="px-2 py-1.5 text-xs font-bold rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition border border-blue-200/50"
               >
                 Instructor
               </button>
               <button
                 type="button"
-                onClick={() => fillDemo("admin@aub.edu.kh", "Admin@123")}
+                onClick={() => fillDemo("admin@elms.edu", "Admin123!")}
                 className="px-2 py-1.5 text-xs font-bold rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition border border-purple-200/50"
               >
                 Admin
